@@ -1,0 +1,124 @@
+{
+  "eventMap": {
+    "title": "Veranstaltungen auf der Karte"
+  },
+  "filters": {
+    "theme": "Thema der Veranstaltung",
+    "header": "Filter",
+    "any": "Beliebig",
+    "age": "Alter",
+    "for": "Für wen:",
+    "format": "Format",
+    "indoor": "Drinnen",
+    "outdoor": "Draußen",
+    "type": "Typ",
+    "apply": "Filter anwenden",
+    "reset": "Filter zurücksetzen",
+    "children": "Kinder",
+    "adults": "Erwachsene"
+  },
+  "types": {
+    "culture": "Kultur",
+    "exhibition": "Ausstellung",
+    "performance": "Aufführung",
+    "painting": "Malerei",
+    "science": "Wissenschaft",
+    "sport": "Sport",
+    "nature": "Natur",
+    "health": "Gesundheit",
+    "dance": "Tanz",
+    "music": "Musik",
+    "technology": "Technologie",
+    "communication": "Kommunikation",
+    "learning": "Lernen",
+    "books": "Bücher",
+    "lecture": "Vortrag",
+    "quest": "Quest",
+    "masterclass": "Meisterkurs",
+    "entertainment": "Unterhaltung",
+    "game": "Spiel",
+    "kids": "Kinder",
+    "cinema": "Kino",
+    "entertainment_centers": "Freizeitzentren",
+    "clubs_and_nightlife": "Clubs und Nachtleben",
+    "fair": "Jahrmarkt",
+    "food": "Essen",
+    "festival": "Festival",
+    "cars": "Autos",
+    "religion": "Religion",
+    "other": "Sonstiges"
+  },
+  "auth": {
+    "promo": "Bitte registriere dich, um fortzufahren. Es ist schnell und kostenlos.",
+    "google": "Mit Google anmelden",
+    "apple": "Mit Apple anmelden",
+    "email": "Link per E-Mail erhalten",
+    "sms": "Code per SMS erhalten",
+    "enter_code": "Code eingeben",
+    "no_thanks": "Nein, danke",
+    "enter_email": "Gib deine E-Mail-Adresse ein:",
+    "email_sent": "Link gesendet! Bitte überprüfe deine E-Mail.",
+    "email_error": "Fehler beim Senden des Links",
+    "enter_phone": "Gib deine Telefonnummer im internationalen Format ein, z.B. +41791112233",
+    "sms_sent": "Code gesendet! Bitte eingeben, wenn du ihn erhältst.",
+    "sms_error": "Fehler beim Senden der SMS",
+    "enter_phone_again": "Gib erneut die Telefonnummer ein",
+    "enter_sms_code": "Gib den SMS-Code ein",
+    "code_error": "Fehler beim Bestätigen des Codes",
+    "logged_in": "Du bist eingeloggt!",
+    "login_error": "Fehler beim Login",
+    "phone_required": "Bitte gib deine Telefonnummer ein",
+    "phone_placeholder": "Deine Telefonnummer",
+    "code_sent_to": "Code gesendet an",
+    "change_phone": "Nummer ändern",
+    "loading": "Bitte warten..."
+  },
+
+  "Select Dates": "Daten auswählen",
+  "Start of period": "Beginn des Zeitraums",
+  "End of period": "Ende des Zeitraums",
+
+    "ui": {
+    "showList": "Als Liste anzeigen",
+    "hideList": "Liste ausblenden",
+    "addEvent": "Veranstaltung hinzufügen",
+    "feedback": "Feedback",
+    "privacy": "Datenschutzerklärung",
+    "share": "Teilen",
+    "addToCalendar": "Zum Kalender hinzufügen",
+    "calendarShort": "Kalender",
+    "copied": "Link kopiert",
+    "logout": "Abmelden",
+    "setHome": "Heimatadresse festlegen",
+    "favorites": "Favoriten",
+    "noFavorites": "Sie haben noch keine Favoriten"
+  },
+
+  "feedback": {
+  "title": "Feedback",
+  "name": "Ihr Name",
+  "email": "Ihre E-Mail",
+  "message": "Ihre Nachricht",
+  "message_required": "Bitte geben Sie eine Nachricht ein",
+  "send": "Senden",
+  "sending": "Wird gesendet...",
+  "success": "Vielen Dank! Ihr Feedback wurde gesendet.",
+  "error": "Fehler beim Senden des Feedbacks"
+},
+
+"geo":{
+  "setHome": "Heimatadresse festlegen",
+  "useMyLocation": "Meinen Standort bestimmen",
+  "or": "ODER",
+  "enterAddress": "Bitte geben Sie Ihre Adresse ein",
+  "locating": "Standort wird ermittelt...",
+  "error": "Standort konnte nicht ermittelt werden",
+  "unsupported": "Geolokalisierung wird von Ihrem Browser nicht unterstützt"
+},
+
+"profile": {
+  "please_login": "Mit der Anmeldung kannst du Veranstaltungen zu Favoriten hinzufügen und persönliche Einstellungen speichern. Bitte melde dich an oder registriere dich.",
+  "enter_address": "Bitte gib deine Adresse ein:"
+}
+
+}

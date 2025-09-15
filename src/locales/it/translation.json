@@ -1,0 +1,125 @@
+{
+  "eventMap": {
+    "title": "Eventi sulla mappa"
+  },
+  "filters": {
+    "header": "Filtri",
+    "theme": "Tema dell'evento",
+    "for": "Per:",
+    "age": "Età",
+    "format": "Formato",
+    "indoor": "Interno",
+    "outdoor": "Esterno",
+    "type": "Tipo",
+    "apply": "Applica filtri",
+    "reset": "Ripristina filtri",
+    "children": "Bambini",
+    "adults": "Adulti",
+    "any": "Qualsiasi"
+  },
+  "types": {
+    "culture": "Cultura",
+    "exhibition": "Mostra",
+    "performance": "Spettacolo",
+    "painting": "Pittura",
+    "science": "Scienza",
+    "sport": "Sport",
+    "nature": "Natura",
+    "health": "Salute",
+    "dance": "Danza",
+    "music": "Musica",
+    "technology": "Tecnologia",
+    "communication": "Comunicazione",
+    "learning": "Apprendimento",
+    "books": "Libri",
+    "lecture": "Lezione",
+    "quest": "Quest",
+    "masterclass": "Masterclass",
+    "entertainment": "Intrattenimento",
+    "game": "Gioco",
+    "kids": "Bambini",
+    "cinema": "Cinema",
+    "entertainment_centers": "Centri di intrattenimento",
+    "clubs_and_nightlife": "Locali e vita notturna",
+    "fair": "Fiera",
+    "food": "Cibo",
+    "festival": "Festival",
+    "cars": "Automobili",
+    "religion": "Religione",
+    "other": "Altro"
+  },
+  "Select Dates": "Seleziona le date",
+  "Start of period": "Inizio del periodo",
+  "End of period": "Fine del periodo",
+
+"auth": {
+  "promo": "Per continuare, registrati! È veloce e gratuito.",
+  "google": "Accedi con Google",
+  "apple": "Accedi con Apple",
+  "email": "Ricevi il link via email",
+  "sms": "Ricevi un codice via SMS",
+  "enter_code": "Inserisci il codice",
+  "no_thanks": "No, grazie",
+  "enter_email": "Inserisci il tuo indirizzo email:",
+  "email_sent": "Link inviato! Controlla la tua casella di posta.",
+  "email_error": "Errore durante l’invio del link",
+  "enter_phone": "Inserisci il tuo numero di telefono in formato internazionale, es. +41791112233",
+  "sms_sent": "Codice inviato! Inseriscilo quando lo ricevi.",
+  "sms_error": "Errore durante l’invio dell’SMS",
+  "enter_phone_again": "Inserisci di nuovo il numero di telefono",
+  "enter_sms_code": "Inserisci il codice SMS",
+  "code_error": "Errore durante la verifica del codice",
+  "logged_in": "Accesso effettuato!",
+  "login_error": "Errore di accesso",
+  "phone_required": "Inserisci il tuo numero di telefono",
+  "phone_placeholder": "Il tuo numero di telefono",
+  "code_sent_to": "Codice inviato a",
+  "change_phone": "Cambia numero",
+  "loading": "Attendere..."
+},
+
+"ui": {
+  "showList": "Mostra come elenco",
+  "hideList": "Nascondi elenco",
+  "addEvent": "Aggiungi evento",
+  "feedback": "Feedback",
+  "privacy": "Informativa sulla privacy",
+  "share": "Condividi",
+  "addToCalendar": "Aggiungi al calendario",
+  "calendarShort": "Calendario",
+  "copied": "Link copiato",
+  "logout": "Esci",
+  "favorites": "Preferiti",
+  "setHome": "Imposta l'indirizzo di casa",
+  "noFavorites": "Non hai ancora preferiti"
+  },
+
+  "feedback": {
+  "title": "Feedback",
+  "name": "Il tuo nome",
+  "email": "La tua email",
+  "message": "Il tuo messaggio",
+  "message_required": "Per favore inserisci un messaggio",
+  "send": "Invia",
+  "sending": "Invio in corso...",
+  "success": "Grazie! Il tuo feedback è stato inviato.",
+  "error": "Errore durante l'invio del feedback"
+},
+
+"geo":{
+  "setHome": "Imposta l'indirizzo di casa",
+  "useMyLocation": "Determina la mia posizione",
+  "or": "OPPURE",
+  "enterAddress": "Per favore, inserisci il tuo indirizzo",
+  "locating": "Determinazione della posizione...",
+  "error": "Impossibile determinare la posizione",
+  "unsupported": "La geolocalizzazione non è supportata dal tuo browser"
+},
+
+
+"profile": {
+  "please_login": "L'accesso consente di aggiungere eventi ai preferiti e salvare le impostazioni personali. Effettua l'accesso o registrati.",
+  "enter_address": "Per favore, inserisci il tuo indirizzo:"
+}
+
+}

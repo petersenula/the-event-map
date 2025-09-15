@@ -1,0 +1,15 @@
+{
+  "title": "Datenschutzerklärung",
+  "content": [
+    "Diese Datenschutzerklärung gilt für die Nutzung der Anwendung {{appName}}, die in der Schweiz betrieben wird. Wir halten uns an das revidierte Schweizer Datenschutzgesetz (revDSG) und, soweit anwendbar, an die EU-Datenschutz-Grundverordnung (DSGVO).",
+    "1. Verantwortlicher: {{appName}}, Kontakt: {{contactEmail}}",
+    "2. Erhobene Daten: Wir erfassen nur die für den Betrieb der Anwendung notwendigen Daten – z. B. Name, E-Mail-Adresse, Telefonnummer und gegebenenfalls Zahlungsinformationen.",
+    "3. Zweck der Verarbeitung: Zur Bereitstellung unserer Dienste, Personalisierung von Inhalten, Kommunikation mit Nutzern und Einhaltung gesetzlicher Verpflichtungen.",
+    "4. Cookies und lokaler Speicher: Wir verwenden keine Tracking-Cookies. Wir nutzen den lokalen Speicher oder Sitzungsspeicher Ihres Browsers, um Ihre Einstellungen und den Anmeldestatus zu speichern.",
+    "5. Aufbewahrung: Daten werden nur so lange gespeichert, wie es für den vorgesehenen Zweck erforderlich ist.",
+    "6. Weitergabe: Ihre Daten werden nicht an Dritte verkauft. Sie können nur mit vertrauenswürdigen Partnern (z. B. Zahlungsanbietern) geteilt werden, wenn dies für den Betrieb notwendig ist.",
+    "7. Rechte: Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Datenübertragbarkeit.",
+    "8. Sicherheit: Wir verwenden technische und organisatorische Maßnahmen zum Schutz Ihrer Daten.",
+    "9. Änderungen: Diese Richtlinie kann aktualisiert werden, um den gesetzlichen Anforderungen zu entsprechen."
+  ]
+}

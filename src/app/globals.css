@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+html, body, #__next, #root { height: 100%; }
+body { margin: 0; }
+body.no-page-scroll { overflow: hidden; } /* будем включать только на карте */
+
+/* Уменьшаем размер попапа календаря */
+.react-datepicker {
+  font-size: 0.8rem; /* уменьшаем шрифт */
+  width: 230px !important; /* ограничиваем ширину */
+}
+
+/* Подгоняем контейнер месяца */
+.react-datepicker__month-container {
+  width: 100%;
+}
+
+/* Слегка уменьшаем кнопки навигации */
+.react-datepicker__navigation {
+  top: 8px;
+}
+
+/* компактный календарь для popper + календаря */
+.dp-sm.react-datepicker {
+  width: 200px !important;      /* общая ширина */
+  font-size: 10px;              /* помельче шрифт */
+}
+
+.dp-sm .react-datepicker__month-container {
+  width: 100%;
+}
+
+.dp-sm .react-datepicker__header {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.dp-sm .react-datepicker__day,
+.dp-sm .react-datepicker__day-name {
+  width: 1rem;                  /* размеры клеток */
+  line-height: 1rem;
+}
+
+/* на больших экранах можно чуть больше */
+@media (min-width: 1024px) {
+  .dp-sm.react-datepicker {
+    width: 220px !important;
+    font-size: 13px;
+  }
+}
+
+/* React DatePicker — белый полупрозрачный фон + чёрный текст + поверх карты */
+.dp-sm { 
+  z-index: 9999 !important; /* чтобы календарь был поверх Google Maps */
+}
+
+/* сам календарь */
+.dp-sm .react-datepicker {
+  background: rgba(255, 255, 255, 0.95);
+  color: #111;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+/* шапка календаря */
+.dp-sm .react-datepicker__header {
+  background: transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+/* чёрный текст везде внутри */
+.dp-sm .react-datepicker__current-month,
+.dp-sm .react-datepicker__day-name,
+.dp-sm .react-datepicker__day,
+.dp-sm .react-datepicker__time-name {
+  color: #111;
+}
+
+/* немного контраста для неактивных/чужих дней */
+.dp-sm .react-datepicker__day--disabled { color: #bbb; }
+.dp-sm .react-datepicker__day--outside-month { color: #999; }
+
+/* выбранный день/клавиатурный фокус — чтобы было видно на белом */
+.dp-sm .react-datepicker__day--selected,
+.dp-sm .react-datepicker__day--keyboard-selected {
+  background-color: #2563eb; /* синий, можно заменить */
+  color: #fff;
+}
+
+/* ====== MOBILE date input wrapper ====== */
+.dp-input {
+  display: block;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 10px;
+  padding: 6px 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* сам <input> внутри react-datepicker */
+.dp-input input {
+  background: transparent !important;
+  color: #111 !important;
+  font-size: 12px;
+  width: 100%;
+}
+
+/* плейсхолдеры — чтобы были видны */
+.dp-input input::placeholder {
+  color: #111;
+  opacity: 0.7;
+}
+
+/* попап календаря — уже был, но на всякий */
+.dp-sm { z-index: 3000 !important; }
+.dp-sm .react-datepicker {
+  background: rgba(255,255,255,0.95);
+  color: #111;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+}
+.dp-sm .react-datepicker__current-month,
+.dp-sm .react-datepicker__day-name,
+.dp-sm .react-datepicker__day,
+.dp-sm .react-datepicker__time-name { color: #111; }
+
+/* отключаем автоувеличение текста только для наших мини-кнопок */
+.no-auto-text {
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+/* … :root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+<div className="bg-white text-black font-sans">...</div>
+
+.react-datepicker {
+  font-family: inherit;
+  font-size: 14px;
+  color: #1f2937; 
+}
+
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__current-month,
+.react-datepicker-time__header {
+  color: #1f2937; 
+}
+.react-datepicker__input-container input {
+  color: #1f2937 !important; 
+  font-weight: 500;
+} */ 

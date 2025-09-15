@@ -1,0 +1,9 @@
+{
+  "setHome": "Set home location",
+  "useMyLocation": "Use my location",
+  "or": "OR",
+  "enterAddress": "Please enter your address",
+  "locating": "Locating...",
+  "error": "Could not determine location",
+  "unsupported": "Geolocation is not supported by your browser"
+}

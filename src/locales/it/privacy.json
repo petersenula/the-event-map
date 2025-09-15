@@ -1,0 +1,15 @@
+{
+  "title": "Informativa sulla privacy",
+  "content": [
+    "La presente informativa sulla privacy si applica all'uso dell'applicazione {{appName}}, gestita in Svizzera. Rispettiamo la Legge federale svizzera sulla protezione dei dati rivista (nLPD) e, ove applicabile, il Regolamento generale dell'UE sulla protezione dei dati (GDPR).",
+    "1. Titolare del trattamento: {{appName}}, Contatto: {{contactEmail}}",
+    "2. Dati raccolti: Raccogliamo solo i dati necessari per il funzionamento dell'applicazione – ad esempio nome, indirizzo e-mail, numero di telefono e, se applicabile, informazioni di pagamento.",
+    "3. Finalità del trattamento: Fornire i nostri servizi, personalizzare i contenuti, comunicare con gli utenti e rispettare gli obblighi legali.",
+    "4. Cookie e archiviazione locale: Non utilizziamo cookie di tracciamento. Utilizziamo l'archiviazione locale o l'archiviazione di sessione del browser per salvare le tue preferenze e lo stato di accesso.",
+    "5. Conservazione: I dati vengono conservati solo per il tempo necessario allo scopo previsto.",
+    "6. Condivisione: I tuoi dati non vengono venduti a terzi. Possono essere condivisi solo con partner fidati (ad esempio fornitori di pagamento) quando necessario per il funzionamento.",
+    "7. Diritti: Hai il diritto di accedere ai tuoi dati, rettificarli, cancellarli, limitarne il trattamento e richiederne la portabilità.",
+    "8. Sicurezza: Utilizziamo misure tecniche e organizzative per proteggere i tuoi dati.",
+    "9. Modifiche: La presente informativa può essere aggiornata per rispettare i requisiti legali."
+  ]
+}

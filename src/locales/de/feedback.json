@@ -1,0 +1,20 @@
+{
+  "title": "Feedback",
+  "intro": "Wir schätzen deine Meinung! Bitte teile deine Gedanken oder melde ein Problem.",
+  "fields": {
+    "name": "Dein Name (optional)",
+    "email": "Deine E-Mail",
+    "message": "Deine Nachricht"
+  },
+  "placeholders": {
+    "name": "Max Mustermann",
+    "email": "du@beispiel.de",
+    "message": "Schreibe deine Nachricht hier..."
+  },
+  "btn": {
+    "submit": "Senden",
+    "sending": "Wird gesendet..."
+  },
+  "success": "Vielen Dank! Dein Feedback ist bei uns eingegangen.",
+  "error": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+}

@@ -1,0 +1,14 @@
+{
+  "hosting": [
+    {
+      "site": "the-event-map-landing",
+      "public": "landing",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    },
+    {
+      "site": "the-event-map-ch",             // <-- твой текущий сайт с картой
+      "public": "out",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    }
+  ]
+}

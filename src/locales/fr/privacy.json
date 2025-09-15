@@ -1,0 +1,15 @@
+{
+  "title": "Politique de confidentialité",
+  "content": [
+    "La présente politique de confidentialité s'applique à l'utilisation de l'application {{appName}}, exploitée en Suisse. Nous respectons la Loi fédérale révisée sur la protection des données (nLPD) et, le cas échéant, le Règlement général de l'UE sur la protection des données (RGPD).",
+    "1. Responsable du traitement : {{appName}}, Contact : {{contactEmail}}",
+    "2. Données collectées : Nous ne collectons que les données nécessaires au fonctionnement de l'application – par exemple, nom, adresse e-mail, numéro de téléphone et, le cas échéant, informations de paiement.",
+    "3. Finalité du traitement : Fournir nos services, personnaliser le contenu, communiquer avec les utilisateurs et respecter les obligations légales.",
+    "4. Cookies et stockage local : Nous n'utilisons pas de cookies de suivi. Nous utilisons le stockage local ou le stockage de session de votre navigateur pour enregistrer vos préférences et votre statut de connexion.",
+    "5. Conservation : Les données sont conservées uniquement pendant la durée nécessaire à l'objectif prévu.",
+    "6. Partage : Vos données ne sont pas vendues à des tiers. Elles peuvent être partagées uniquement avec des partenaires de confiance (par exemple, prestataires de paiement) lorsque cela est nécessaire au fonctionnement.",
+    "7. Droits : Vous avez le droit d'accéder à vos données, de les rectifier, de les supprimer, d'en limiter le traitement et d'en demander la portabilité.",
+    "8. Sécurité : Nous utilisons des mesures techniques et organisationnelles pour protéger vos données.",
+    "9. Modifications : Cette politique peut être mise à jour pour se conformer aux exigences légales."
+  ]
+}

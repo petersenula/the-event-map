@@ -1,0 +1,20 @@
+{
+  "title": "Feedback",
+  "intro": "We value your opinion! Please share your thoughts or report a problem.",
+  "fields": {
+    "name": "Your name (optional)",
+    "email": "Your email",
+    "message": "Your message"
+  },
+  "placeholders": {
+    "name": "John Doe",
+    "email": "you@example.com",
+    "message": "Type your message here..."
+  },
+  "btn": {
+    "submit": "Send",
+    "sending": "Sending..."
+  },
+  "success": "Thank you! Your feedback has been received.",
+  "error": "Something went wrong. Please try again."
+}

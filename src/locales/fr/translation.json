@@ -1,0 +1,129 @@
+{
+  "eventMap": {
+    "title": "Événements sur la carte"
+  },
+  "filters": {
+    "header": "Filtres",
+    "theme": "Thème de l'événement",
+    "for": "Pour :",
+    "age": "Âge",
+    "format": "Format",
+    "indoor": "Intérieur",
+    "outdoor": "Extérieur",
+    "type": "Type",
+    "apply": "Appliquer les filtres",
+    "reset": "Réinitialiser les filtres",
+    "children": "Enfants",
+    "adults": "Adultes",
+    "any": "Tous"
+  },
+  "types": {
+    "culture": "Culture",
+    "exhibition": "Exposition",
+    "performance": "Spectacle",
+    "painting": "Peinture",
+    "science": "Science",
+    "sport": "Sport",
+    "nature": "Nature",
+    "health": "Santé",
+    "dance": "Danse",
+    "music": "Musique",
+    "technology": "Technologie",
+    "communication": "Communication",
+    "learning": "Apprentissage",
+    "books": "Livres",
+    "lecture": "Conférence",
+    "quest": "Quête",
+    "masterclass": "Atelier",
+    "entertainment": "Divertissement",
+    "game": "Jeu",
+    "kids": "Enfants",
+    "cinema": "Cinéma",
+    "entertainment_centers": "Centres de divertissement",
+    "clubs_and_nightlife": "Clubs et vie nocturne",
+    "fair": "Foire",
+    "food": "Nourriture",
+    "festival": "Festival",
+    "cars": "Voitures",
+    "religion": "Religion",
+    "other": "Autre"
+  },
+
+  "Select Dates": "Sélectionner les dates",
+  "Start of period": "Début de la période",
+  "End of period": "Fin de la période",
+
+  "auth": {
+  "promo": "Veuillez vous inscrire pour continuer. C’est rapide et gratuit.",
+  "google": "Se connecter avec Google",
+  "apple": "Se connecter avec Apple",
+  "email": "Recevoir un lien par email",
+  "sms": "Recevoir un code par SMS",
+  "enter_code": "Entrer le code",
+  "no_thanks": "Non merci",
+  "enter_email": "Entrez votre adresse e-mail :",
+  "email_sent": "Lien envoyé ! Vérifiez votre boîte mail.",
+  "email_error": "Erreur lors de l’envoi du lien",
+  "enter_phone": "Entrez votre numéro de téléphone au format international, par ex. +41791112233",
+  "sms_sent": "Code envoyé ! Veuillez le saisir lorsque vous le recevez.",
+  "sms_error": "Erreur lors de l’envoi du SMS",
+  "enter_phone_again": "Entrez à nouveau le numéro de téléphone",
+  "enter_sms_code": "Entrez le code SMS",
+  "code_error": "Erreur lors de la vérification du code",
+  "logged_in": "Vous êtes connecté !",
+  "login_error": "Erreur de connexion",
+  "phone_required": "Veuillez entrer votre numéro de téléphone",
+  "phone_placeholder": "Votre numéro de téléphone",
+  "code_sent_to": "Code envoyé à",
+  "change_phone": "Changer de numéro",
+  "loading": "Veuillez patienter..."
+},
+
+  "list": {
+   "button": "Voir sous forme de liste"
+},
+
+  "ui": {
+    "showList": "Afficher en liste",
+    "hideList": "Masquer la liste",
+    "addEvent": "Ajouter un événement",
+    "feedback": "Retour",
+    "privacy": "Politique de confidentialité",
+    "share": "Partager",
+    "addToCalendar": "Ajouter au calendrier",
+    "calendarShort": "Calendrier",
+    "copied": "Lien copié",
+    "logout": "Se déconnecter",
+    "favorites": "Favoris",
+    "setHome": "Définir l'adresse de domicile",
+    "noFavorites": "Vous n'avez pas encore de favoris"
+  },
+
+  "feedback": {
+  "title": "Retour d'information",
+  "name": "Votre nom",
+  "email": "Votre e-mail",
+  "message": "Votre message",
+  "message_required": "Veuillez entrer un message",
+  "send": "Envoyer",
+  "sending": "Envoi...",
+  "success": "Merci ! Votre retour a été envoyé.",
+  "error": "Erreur lors de l'envoi du retour"
+},
+
+"geo":{
+  "setHome": "Définir l'adresse de domicile",
+  "useMyLocation": "Déterminer ma position",
+  "or": "OU",
+  "enterAddress": "Veuillez entrer votre adresse",
+  "locating": "Localisation en cours...",
+  "error": "Impossible de déterminer la position",
+  "unsupported": "La géolocalisation n'est pas prise en charge par votre navigateur"
+},
+
+"profile": {
+  "please_login": "L'inscription permet d'ajouter des événements aux favoris et d'enregistrer des paramètres personnels. Veuillez vous connecter ou vous inscrire.",
+  "enter_address": "Veuillez entrer votre adresse :"
+}
+  
+}

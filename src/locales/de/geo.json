@@ -1,0 +1,9 @@
+{
+  "setHome": "Heimatadresse festlegen",
+  "useMyLocation": "Meinen Standort bestimmen",
+  "or": "ODER",
+  "enterAddress": "Bitte geben Sie Ihre Adresse ein",
+  "locating": "Standort wird ermittelt...",
+  "error": "Standort konnte nicht ermittelt werden",
+  "unsupported": "Geolokalisierung wird von Ihrem Browser nicht unterstützt"
+}

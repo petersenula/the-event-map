@@ -1,0 +1,125 @@
+{
+  "eventMap": {
+    "title": "Events on the map"
+  },
+  "filters": {
+    "theme": "Event theme",
+    "header": "Filters",
+    "any": "Any",
+    "age": "Age", 
+    "for": "For whom:",
+    "format": "Format",
+    "indoor": "Indoor",
+    "outdoor": "Outdoor",
+    "type": "Type",
+    "apply": "Apply filters",
+    "reset": "Reset filters",
+    "children": "Children",
+    "adults": "Adults"
+  },
+  "types": {
+    "culture": "Culture",
+    "exhibition": "Exhibition",
+    "performance": "Performance",
+    "painting": "Painting",
+    "science": "Science",
+    "sport": "Sport",
+    "nature": "Nature",
+    "health": "Health",
+    "dance": "Dance",
+    "music": "Music",
+    "technology": "Technology",
+    "communication": "Communication",
+    "learning": "Learning",
+    "books": "Books",
+    "lecture": "Lecture",
+    "quest": "Quest",
+    "masterclass": "Masterclass",
+    "entertainment": "Entertainment",
+    "game": "Game",
+    "kids": "Kids",
+    "cinema": "Cinema",
+    "entertainment_centers": "Entertainment Centers",
+    "clubs_and_nightlife": "Clubs and Nightlife",
+    "fair": "Fair",
+    "food": "Food",
+    "festival": "Festival",
+    "cars": "Cars",
+    "religion": "Religion",
+    "other": "Other"
+  },
+  "auth": {
+    "promo": "To continue, please sign up. It’s quick and free.",
+    "google": "Sign in with Google",
+    "apple": "Sign in with Apple",
+    "email": "Get a link by email",
+    "sms": "Get a code by SMS",
+    "enter_code": "Enter the code",
+    "no_thanks": "No, thanks",
+    "enter_email": "Enter your email to sign in:",
+    "email_sent": "Link sent! Check your email.",
+    "email_error": "Error sending the link",
+    "enter_phone": "Enter your phone number in international format, e.g. +41791112233",
+    "sms_sent": "Code sent! Enter it when received.",
+    "sms_error": "Error sending SMS",
+    "enter_phone_again": "Enter the phone number again",
+    "enter_sms_code": "Enter the SMS code",
+    "code_error": "Error verifying the code",
+    "logged_in": "You are logged in!",
+    "login_error": "Login error",
+    "phone_required": "Please enter your phone number",
+    "phone_placeholder": "Your phone number",
+    "code_sent_to": "Code sent to",
+    "change_phone": "Change number",
+    "loading": "Please wait..."
+  },
+
+  "profile": {
+  "please_login": "Authorization allows you to add events to favorites and save personal settings. Please log in or register.",
+  "enter_address": "Please enter your address:"
+},
+
+  "ui": {
+    "showList": "Show as list",
+    "hideList": "Hide list",
+    "addEvent": "Add event",
+    "feedback": "Feedback",
+    "privacy": "Privacy policy",
+    "share": "Share",
+    "addToCalendar": "Add to calendar",
+    "calendarShort": "Calendar",
+    "copied": "Link copied",
+    "logout": "Log out",
+    "profile": "Profile",
+    "login": "Login",
+    "favorites": "Favorites",
+    "setHome": "Set Home Location",
+    "noFavorites": "You have no favorites yet"
+  },
+  
+  "feedback": {
+  "title": "Feedback",
+  "name": "Your name",
+  "email": "Your email",
+  "message": "Your message",
+  "message_required": "Please enter a message",
+  "send": "Send",
+  "sending": "Sending...",
+  "success": "Thank you! Your feedback has been sent.",
+  "error": "Error sending feedback"
+},
+
+"geo":{
+  "setHome": "Set home location",
+  "useMyLocation": "Use my location",
+  "or": "OR",
+  "enterAddress": "Please enter your address",
+  "locating": "Locating...",
+  "error": "Could not determine location",
+  "unsupported": "Geolocation is not supported by your browser"
+},
+
+  "Select Dates": "Select Dates",
+  "Start of period": "Start of period",
+  "End of period": "End of period"
+}

@@ -1,0 +1,20 @@
+{
+  "title": "Commentaires",
+  "intro": "Votre avis nous tient à cœur ! Partagez vos idées ou signalez un problème.",
+  "fields": {
+    "name": "Votre nom (facultatif)",
+    "email": "Votre e-mail",
+    "message": "Votre message"
+  },
+  "placeholders": {
+    "name": "Jean Dupont",
+    "email": "vous@exemple.com",
+    "message": "Saisissez votre message ici..."
+  },
+  "btn": {
+    "submit": "Envoyer",
+    "sending": "Envoi en cours..."
+  },
+  "success": "Merci ! Votre retour a bien été reçu.",
+  "error": "Une erreur s'est produite. Veuillez réessayer."
+}
