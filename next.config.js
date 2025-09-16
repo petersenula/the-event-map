@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  
-  images: { unoptimized: true },
-  eslint: { ignoreDuringBuilds: true } // <-- не валить билд из-за ESLint
+  experimental: {
+    appDir: true,
+  },
+  // Скажем Vercel, что не экспортим HTML
+  output: 'standalone',
+  // и любые другие настройки
 };
+
 module.exports = nextConfig;
-
-
