@@ -2,6 +2,7 @@
 
 import { useSessionReady } from '../hooks/useSessionReady';
 import FullScreenLoader from './FullScreenLoader';
+import InstallPrompt from './InstallPrompt';
 
 export default function ClientWrapper({
   children,
@@ -11,5 +12,10 @@ export default function ClientWrapper({
   const ready = useSessionReady();
 
   if (!ready) return <FullScreenLoader />;
-  return <>{children}</>;
+  return (
+    <>
+      <InstallPrompt />
+      {children}
+    </>
+  );
 }
