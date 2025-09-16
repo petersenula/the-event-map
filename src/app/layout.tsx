@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next';
-import '../globals.css';
-import I18nProvider from '../components/I18nProvider';
+import '../../globals.css'; // 🧠 Путь из app/ в src/
+import I18nProvider from '../../components/I18nProvider'; // 🧠 Путь из app/ в src/components
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
 import 'react-datepicker/dist/react-datepicker.css';
-import ClientWrapper from '@/components/ClientWrapper';
+import ClientWrapper from '../../components/ClientWrapper';
 
 export const metadata: Metadata = {
   title: 'DFF Event Map',
