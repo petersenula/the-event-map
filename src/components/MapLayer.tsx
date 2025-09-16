@@ -100,6 +100,44 @@ const MapLayer: React.FC<MapLayerProps> = ({
     } catch {}
   }, []);
 
+  const rebindIdleListener = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Удаляем все старые idle-события (опционально, можно оставить если их точно один)
+    (window as any).google.maps.event.clearListeners(map, 'idle');
+
+    map.addListener('idle', () => {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+
+        if (center && zoom != null) {
+        localStorage.setItem('map_center', JSON.stringify({ lat: center.lat(), lng: center.lng() }));
+        localStorage.setItem('map_zoom', JSON.stringify(zoom));
+        }
+
+        fetchEventsInBounds(); // <-- ключевое
+    });
+
+    console.log('[idle listener] re-bound');
+    }, [fetchEventsInBounds, mapRef]);
+
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+            console.log('[visibilitychange] screen is visible again');
+            rebindIdleListener(); // ← перевесим слушатель
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
+    }, [rebindIdleListener]);
+
+
+
   useEffect(() => {
     const checkAndSetHomeLocation = async () => {
         try {
