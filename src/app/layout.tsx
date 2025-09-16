@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import '../globals.css'; // ✅ в той же папке
+import './globals.css'; // ✅ в той же папке
 
 import I18nProvider from '../components/i18nProvider'; // ✅ из src/components
 import ClientWrapper from '../components/ClientWrapper';
