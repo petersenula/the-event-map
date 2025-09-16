@@ -153,51 +153,55 @@ export default function EventMap() {
     }
   }, []);
 
-  const fetchEventsInBounds = useCallback(async () => {
-    if (!mapRef.current) return;
+  const fetchEventsInBounds = useCallback(
+    async (bounds?: google.maps.LatLngBounds) => {
+      const b = bounds ?? mapRef.current?.getBounds();
+      if (!b) {
+        console.warn('[fetchEventsInBounds] no bounds available');
+        return;
+      }
 
-    const bounds = mapRef.current.getBounds();
-    if (!bounds) return;
+      const ne = b.getNorthEast();
+      const sw = b.getSouthWest();
 
-    const ne = bounds.getNorthEast(); // северо-восток
-    const sw = bounds.getSouthWest(); // юго-запад
+      const minLat = sw.lat();
+      const maxLat = ne.lat();
+      const minLng = sw.lng();
+      const maxLng = ne.lng();
 
-    const minLat = sw.lat();
-    const maxLat = ne.lat();
-    const minLng = sw.lng();
-    const maxLng = ne.lng();
+      console.log('[fetchEventsInBounds] fetching events with', { minLat, maxLat, minLng, maxLng });
 
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .gte('lat', minLat)
-      .lte('lat', maxLat)
-      .gte('lng', minLng)
-      .lte('lng', maxLng);
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .gte('lat', minLat)
+        .lte('lat', maxLat)
+        .gte('lng', minLng)
+        .lte('lng', maxLng);
 
-    if (error) {
-      console.error('Ошибка загрузки событий в границах карты:', error);
-      return;
-    }
+      if (error) {
+        console.error('❌ Ошибка загрузки событий в границах карты:', error);
+        return;
+      }
 
-    const newEvents = (data ?? [])
-      .filter((ev: any) => !loadedEventIds.current.has(ev.id)) // не добавлять уже загруженные
-      .map((ev: any) => {
-        const parsed = parseLatLng(ev.lat, ev.lng);
-        const addr = (ev.address || '').trim();
-        const normType = normalizeType(ev.type);
-        return { ...ev, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null, type: normType, types: normType };
-      });
+      const newEvents = (data ?? [])
+        .filter((ev: any) => !loadedEventIds.current.has(ev.id))
+        .map((ev: any) => {
+          const parsed = parseLatLng(ev.lat, ev.lng);
+          const normType = normalizeType(ev.type);
+          return { ...ev, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null, type: normType, types: normType };
+        });
 
-    if (newEvents.length) {
-      // добавим ID в set
-      newEvents.forEach(ev => loadedEventIds.current.add(ev.id));
+      console.log(`[fetchEventsInBounds] добавлено ${newEvents.length} событий`);
 
-      // добавим события в список
-      setEvents(prev => [...prev, ...newEvents]);
-      setFilteredEvents(prev => [...prev, ...newEvents]);
-    }
-  }, []);
+      if (newEvents.length) {
+        newEvents.forEach(ev => loadedEventIds.current.add(ev.id));
+        setEvents(prev => [...prev, ...newEvents]);
+        setFilteredEvents(prev => [...prev, ...newEvents]);
+      }
+    },
+    [mapRef, setEvents, setFilteredEvents]
+  );
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;

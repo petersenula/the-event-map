@@ -197,8 +197,8 @@ const MapLayer: React.FC<MapLayerProps> = ({
         const handleIdle = () => {
             const bounds = map.getBounds();
             if (bounds) {
-            console.log('[idle] bounds changed, fetching...');
-            fetchEventsInBounds();
+            console.log('[idle] bounds changed, fetching...', bounds.toJSON());
+            fetchEventsInBounds(bounds); // <-- теперь передаем bounds
             }
         };
 
@@ -207,8 +207,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
         return () => {
             listener.remove();
         };
-    }, [mapReady]);
-
+    }, [mapReady, fetchEventsInBounds]);
 
   useEffect(() => {
     if (showEventList && selectedEvent != null) {
