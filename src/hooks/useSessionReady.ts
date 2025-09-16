@@ -6,20 +6,25 @@ export function useSessionReady() {
 
   useEffect(() => {
     let isMounted = true;
+
     const check = async () => {
-      let tries = 0;
-      while (tries < 10) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session || tries >= 9) {
-          if (isMounted) setReady(true);
-          return;
-        }
-        await new Promise(res => setTimeout(res, 300));
-        tries++;
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        console.log('👤 Supabase session:', session); // для отладки
+
+        if (isMounted) setReady(true); // Устанавливаем готовность в любом случае
+      } catch (err) {
+        console.error('❌ Ошибка при получении сессии:', err);
+        if (isMounted) setReady(true); // Всё равно продолжаем
       }
     };
+
     check();
-    return () => { isMounted = false };
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return ready;
