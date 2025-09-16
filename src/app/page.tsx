@@ -152,6 +152,8 @@ export default function EventMap() {
       }
     }
   }, []);
+  
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   const fetchEventsInBounds = useCallback(
     async (bounds?: google.maps.LatLngBounds) => {
@@ -289,7 +291,6 @@ export default function EventMap() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null!);
-  const mapRef = useRef<google.maps.Map | null>(null);
 
   const [events, setEvents] = useState<any[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
