@@ -1,21 +1,40 @@
+'use client';
+
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 export const runtime = 'nodejs';
 
-import { cookies } from 'next/headers';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { redirect } from 'next/navigation';
-import { cache } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+import { useTranslations } from 'next-intl';
 
-export default async function Callback() {
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+export default function Confirm() {
+  const router = useRouter();
+  const t = useTranslations('auth');
 
-  if (session) {
-    redirect('/');
-  }
+  useEffect(() => {
+    const run = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      console.log('🧩 SESSION DATA:', data);
+      console.log('⚠️ SESSION ERROR:', error);
 
-  return <p>Loading...</p>;
+
+      if (error) {
+        console.error(t('confirmation_error'), error);
+        alert(t('confirmation_error'));
+      } else {
+        router.replace('/');
+      }
+    };
+
+    run();
+  }, [router, t]);
+
+  return <p>{t('confirming')}</p>;
 }
