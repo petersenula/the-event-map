@@ -137,7 +137,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, [rebindIdleListener]);
 
 
-
   useEffect(() => {
     const checkAndSetHomeLocation = async () => {
         try {
@@ -180,15 +179,36 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, []);
 
     useEffect(() => {
-    console.log('[useEffect] mapReady:', mapReady, 'mapRef:', mapRef.current);
-    if (!mapReady || !mapRef.current) return;
+        console.log('[useEffect] mapReady:', mapReady, 'mapRef:', mapRef.current);
+        if (!mapReady || !mapRef.current) return;
 
-    const bounds = mapRef.current.getBounds();
-    if (bounds) {
-        console.log('[map bounds] triggering fetch');
-        fetchEventsInBounds();
-    }
+        const bounds = mapRef.current.getBounds();
+        if (bounds) {
+            console.log('[map bounds] triggering fetch');
+            fetchEventsInBounds();
+        }
     }, [mapReady]);
+
+    useEffect(() => {
+        if (!mapReady || !mapRef.current) return;
+
+        const map = mapRef.current;
+
+        const handleIdle = () => {
+            const bounds = map.getBounds();
+            if (bounds) {
+            console.log('[idle] bounds changed, fetching...');
+            fetchEventsInBounds();
+            }
+        };
+
+        const listener = map.addListener('idle', handleIdle);
+
+        return () => {
+            listener.remove();
+        };
+    }, [mapReady]);
+
 
   useEffect(() => {
     if (showEventList && selectedEvent != null) {
