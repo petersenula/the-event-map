@@ -9,9 +9,17 @@ import 'react-date-range/dist/theme/default.css';
 import 'react-datepicker/dist/react-datepicker.css';
 
 export const metadata: Metadata = {
-  title: 'DFF Event Map',
-  description: 'Интерактивная карта мероприятий в Швейцарии',
-  icons: { icon: '/favicon.ico' }
+  title: 'The Event Map',
+  description: 'Interactive map of events',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icons/app-icon.png' // для iOS
+  },
+  manifest: '/manifest.json'
+};
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff'
 };
 
 export const viewport: Viewport = {
