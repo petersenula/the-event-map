@@ -1,20 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase/client'; // ✅ правильный импорт
+import { supabase } from '@/utils/supabase/client';
 
 export default function Callback() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const run = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      console.log('[CALLBACK] Session:', data, error);
+    const waitForSession = async () => {
+      let tries = 0;
+      while (tries < 10) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          break;
+        }
+        await new Promise((res) => setTimeout(res, 300)); // подождать 300ms
+        tries++;
+      }
+      setLoading(false);
       router.replace('/');
     };
-    run();
+
+    waitForSession();
   }, [router]);
 
-  return <p>Processing login...</p>;
+  return <p>Processing authorisation...</p>;
 }
