@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css'; // ✅ в той же папке
-import I18nProvider from '../components/I18nProvider'; // ⬆️ из src/components
+import I18nProvider from '../components/i18nProvider'; // ⬆️ из src/components
 import ClientWrapper from '../components/ClientWrapper';
 
 import 'react-date-range/dist/styles.css';
