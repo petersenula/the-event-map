@@ -18,7 +18,7 @@ export default function ClientWrapper({
     return () => clearTimeout(timer);
   }, []);
 
-  if (!ready && !timeoutReached) return <FullScreenLoader />;
+  if (!ready) return <FullScreenLoader />;
   if (!ready && timeoutReached)
     return (
       <div className="fixed inset-0 flex items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center">

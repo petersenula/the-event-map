@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'nodejs';
+
 import { useEffect, useState, useRef, useCallback, useMemo, type ChangeEvent} from 'react';
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader} from '@react-google-maps/api';
 import { supabase } from '@/utils/supabase/client';
