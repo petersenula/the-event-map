@@ -551,6 +551,9 @@ export default function EventMap() {
           setSession(data.session);
           setIsAuthenticated(true);
         }
+        if (mapRef.current) {
+          fetchEventsInBounds(); // перезагружаем события
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
