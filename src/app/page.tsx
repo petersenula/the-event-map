@@ -152,8 +152,10 @@ export default function EventMap() {
       }
     }
   }, []);
-  
+
   const mapRef = useRef<google.maps.Map | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
 
   const fetchEventsInBounds = useCallback(
     async (bounds?: google.maps.LatLngBounds) => {
@@ -292,8 +294,6 @@ export default function EventMap() {
 
   const listRef = useRef<HTMLDivElement>(null!);
 
-  const [events, setEvents] = useState<any[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
   const today = new Date();
   const nextMonth = new Date();
   nextMonth.setMonth(nextMonth.getMonth() + 1);
