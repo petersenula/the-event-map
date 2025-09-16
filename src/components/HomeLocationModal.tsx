@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useRef, useState, useCallback } from 'react';
 import { Autocomplete } from '@react-google-maps/api';
 import { Home, Locate } from 'lucide-react';

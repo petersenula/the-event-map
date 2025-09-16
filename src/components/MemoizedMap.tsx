@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react';
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon } from 'lucide-react';
