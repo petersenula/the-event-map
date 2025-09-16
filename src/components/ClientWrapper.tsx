@@ -1,6 +1,6 @@
 'use client';
 
-import { useSessionReady } from '@/hooks/useSessionReady';
+import { useSessionReady } from '../hooks/useSessionReady';
 import FullScreenLoader from './FullScreenLoader';
 
 export default function ClientWrapper({
