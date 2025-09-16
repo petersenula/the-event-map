@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import './globals.css'; // ✅ в той же папке
+import './globals.css';
 
-import I18nProvider from '../components/i18nProvider'; // ✅ из src/components
-import ClientWrapper from '../components/ClientWrapper';
+import I18nProvider from '../components/i18nProvider';
 
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -13,13 +12,13 @@ export const metadata: Metadata = {
   description: 'Interactive map of events',
   icons: {
     icon: '/favicon.ico',
-    apple: '/icons/app-icon.png' // для iOS
+    apple: '/icons/app-icon.png',
   },
-  manifest: '/manifest.json'
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff'
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
@@ -35,9 +34,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
-        <I18nProvider>
-          <ClientWrapper>{children}</ClientWrapper>
-        </I18nProvider>
+        <I18nProvider>{children}</I18nProvider>
       </body>
     </html>
   );
