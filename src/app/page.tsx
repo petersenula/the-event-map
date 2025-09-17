@@ -157,55 +157,72 @@ export default function EventMap() {
   const [events, setEvents] = useState<any[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<any[]>([]);
 
-  const fetchEventsInBounds = useCallback(
-    async (bounds?: google.maps.LatLngBounds) => {
-      const b = bounds ?? mapRef.current?.getBounds();
-      if (!b) {
-        console.warn('[fetchEventsInBounds] no bounds available');
-        return;
-      }
+  const resetEvents = () => {
+    setEvents([]);
+    setFilteredEvents([]);
+    loadedEventIds.current.clear();
+  };
 
-      const ne = b.getNorthEast();
-      const sw = b.getSouthWest();
+  const fetchEventsInBounds = useCallback(async () => {
+    if (!mapRef.current) return;
 
-      const minLat = sw.lat();
-      const maxLat = ne.lat();
-      const minLng = sw.lng();
-      const maxLng = ne.lng();
+    const bounds = mapRef.current.getBounds();
+    if (!bounds) return;
 
-      console.log('[fetchEventsInBounds] fetching events with', { minLat, maxLat, minLng, maxLng });
+    const ne = bounds.getNorthEast();
+    const sw = bounds.getSouthWest();
 
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .gte('lat', minLat)
-        .lte('lat', maxLat)
-        .gte('lng', minLng)
-        .lte('lng', maxLng);
+    const minLat = sw.lat();
+    const maxLat = ne.lat();
+    const minLng = sw.lng();
+    const maxLng = ne.lng();
 
-      if (error) {
-        console.error('❌ Ошибка загрузки событий в границах карты:', error);
-        return;
-      }
+    console.log('[fetchEventsInBounds] fetching events with:', {
+      minLat,
+      maxLat,
+      minLng,
+      maxLng,
+    });
 
-      const newEvents = (data ?? [])
-        .filter((ev: any) => !loadedEventIds.current.has(ev.id))
-        .map((ev: any) => {
-          const parsed = parseLatLng(ev.lat, ev.lng);
-          const normType = normalizeType(ev.type);
-          return { ...ev, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null, type: normType, types: normType };
-        });
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .gte('lat', minLat)
+      .lte('lat', maxLat)
+      .gte('lng', minLng)
+      .lte('lng', maxLng);
 
+    if (error) {
+      console.error('Ошибка загрузки событий в границах карты:', error);
+      return;
+    }
+
+    const newEvents = (data ?? [])
+      .filter((ev: any) => !loadedEventIds.current.has(ev.id)) // фильтруем уже загруженные
+      .map((ev: any) => {
+        const parsed = parseLatLng(ev.lat, ev.lng);
+        const addr = (ev.address || '').trim();
+        const normType = normalizeType(ev.type);
+        return {
+          ...ev,
+          lat: parsed?.lat ?? null,
+          lng: parsed?.lng ?? null,
+          address: addr,
+          type: normType,
+          types: normType,
+        };
+      });
+
+    if (newEvents.length) {
+      newEvents.forEach((ev) => loadedEventIds.current.add(ev.id));
+      setEvents((prev) => [...prev, ...newEvents]);
+      setFilteredEvents((prev) => [...prev, ...newEvents]);
       console.log(`[fetchEventsInBounds] добавлено ${newEvents.length} событий`);
+    } else {
+      console.log('[fetchEventsInBounds] добавлено 0 событий');
+    }
+  }, [supabase, setEvents, setFilteredEvents]);
 
-      if (newEvents.length) {
-        newEvents.forEach(ev => loadedEventIds.current.add(ev.id));
-        setEvents(prev => [...prev, ...newEvents]);
-        setFilteredEvents(prev => [...prev, ...newEvents]);
-      }
-    },
-    [mapRef, setEvents, setFilteredEvents]
-  );
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -551,18 +568,18 @@ export default function EventMap() {
   }, [events]);
 
   useEffect(() => {
-    const handleVisibility = async () => {
+    const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          setSession(data.session);
-          setIsAuthenticated(true);
-        }
+        console.log('[Visibilitychange] screen is visible again');
+        fetchEventsInBounds(); // догружаем только новые события
       }
     };
+
     document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [fetchEventsInBounds]);
 
   const fetchEvents = useCallback(async () => {
     if (fetchingRef.current) return;
@@ -1374,21 +1391,30 @@ export default function EventMap() {
 
   const handleClearStorage = async () => {
     try {
-      // ...ваш код сохранения home_coords/перемещения карты...
+      console.log('[Cache] Очистка кэша начата...');
 
-      // чистим кэш (как у вас), но оставляем любые ключи, что начинаются с 'sb-' (это вы уже сделали)
+      // сохраняем важные ключи
       const keysToKeep = ['lang', 'map_center', 'map_zoom'];
       for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-')) keysToKeep.push(key);
+        if (key.startsWith('sb-')) keysToKeep.push(key); // токены сессии
       }
+
       for (const key of Object.keys(localStorage)) {
         if (!keysToKeep.includes(key)) localStorage.removeItem(key);
       }
 
-      // «пинганём» сессию — если токен истёк, middleware её обновит
+      // 🔑 сбрасываем список уже загруженных событий
+      loadedEventIds.current.clear();
+      setEvents([]); // очистим state, чтобы избежать дубликатов
+      setFilteredEvents([]);
+
+      // пингуем сессию — middleware обновит токен если он истёк
       await supabase.auth.getUser().catch(() => {});
-      // и сразу подтянем свежие события в видимых границах
+
+      // загружаем заново события в текущих границах
       await fetchEventsInBounds();
+
+      console.log('[Cache] Очистка завершена.');
     } catch (err) {
       console.error('[Cache] Ошибка при очистке:', err);
       alert('Произошла ошибка при очистке кэша.');
@@ -1440,6 +1466,8 @@ export default function EventMap() {
           visibleCount={visibleCount}
           filteredByView={filteredByView}
           favorites={favorites}
+          loadedEventIds={loadedEventIds}
+          resetEvents={resetEvents}
         />
 
       {isMobile ? (

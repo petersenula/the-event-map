@@ -40,6 +40,8 @@ interface MapLayerProps {
   visibleCount: number;
   filteredByView: any[];
   favorites: string[]; 
+  loadedEventIds: React.MutableRefObject<Set<string | number>>;
+  resetEvents: () => void;
 }
 
 const MapLayer: React.FC<MapLayerProps> = ({
@@ -72,6 +74,8 @@ const MapLayer: React.FC<MapLayerProps> = ({
   showEventList,
   visibleCount,
   filteredByView,
+  loadedEventIds,
+  resetEvents,
 }) => {console.log('[MapLayer] mapRef:', mapRef);
   const selected = selectedEvent
     ? events.find((ev) => ev.id === selectedEvent) ?? null
@@ -123,19 +127,21 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, [fetchEventsInBounds, mapRef]);
 
     useEffect(() => {
-        const handleVisibility = () => {
-            if (document.visibilityState === 'visible') {
-            console.log('[visibilitychange] screen is visible again');
-            rebindIdleListener(); // ← перевесим слушатель
-            }
-        };
+    const handleVisibility = () => {
+        if (document.visibilityState === 'visible') {
+        console.log('[Visibilitychange] screen is visible again');
+        resetEvents();
+        console.log('[Visibilitychange] cache cleared, refetching events...');
+        fetchEventsInBounds();
+        rebindIdleListener();
+        }
+    };
 
-        document.addEventListener('visibilitychange', handleVisibility);
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibility);
-        };
-    }, [rebindIdleListener]);
-
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+        document.removeEventListener('visibilitychange', handleVisibility);
+    };
+    }, [fetchEventsInBounds, rebindIdleListener]);
 
   useEffect(() => {
     const checkAndSetHomeLocation = async () => {
