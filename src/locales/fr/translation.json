@@ -52,6 +52,7 @@
   "Select Dates": "Sélectionner les dates",
   "Start of period": "Début de la période",
   "End of period": "Fin de la période",
+  "refreshing_events": "Actualisation des événements...",
 
   "auth": {
   "promo": "Veuillez vous inscrire pour continuer. C’est rapide et gratuit.",

@@ -108,11 +108,14 @@ const MapLayer: React.FC<MapLayerProps> = ({
     } catch {}
   }, []);
 
-  const rebindIdleListener = useCallback(() => {
+    const rebindIdleListener = useCallback(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map) {
+        console.warn('[idle listener] mapRef.current отсутствует');
+        return;
+    }
 
-    // Удаляем все старые idle-события (опционально, можно оставить если их точно один)
+    // 🧹 Удаляем предыдущие слушатели idle (на всякий случай)
     (window as any).google.maps.event.clearListeners(map, 'idle');
 
     map.addListener('idle', () => {
@@ -120,14 +123,18 @@ const MapLayer: React.FC<MapLayerProps> = ({
         const zoom = map.getZoom();
 
         if (center && zoom != null) {
-        localStorage.setItem('map_center', JSON.stringify({ lat: center.lat(), lng: center.lng() }));
+        localStorage.setItem(
+            'map_center',
+            JSON.stringify({ lat: center.lat(), lng: center.lng() })
+        );
         localStorage.setItem('map_zoom', JSON.stringify(zoom));
         }
 
-        fetchEventsInBounds(); // <-- ключевое
+        console.log('[idle listener] сработал → вызов fetchEventsInBounds');
+        fetchEventsInBounds(); // 🔁 загрузка событий при остановке карты
     });
 
-    console.log('[idle listener] re-bound');
+    console.log('[idle listener] перепривязан заново');
     }, [fetchEventsInBounds, mapRef]);
 
   useEffect(() => {
@@ -172,15 +179,27 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, []);
 
     useEffect(() => {
-        console.log('[useEffect] mapReady:', mapReady, 'mapRef:', mapRef.current);
-        if (!mapReady || !mapRef.current) return;
+    if (mapReady && mapRef.current) {
+        rebindIdleListener();
+    }
+    }, [mapReady, rebindIdleListener]);
 
-        const bounds = mapRef.current.getBounds();
-        if (bounds) {
-            console.log('[map bounds] triggering fetch');
-            fetchEventsInBounds();
-        }
-    }, [mapReady]);
+
+    useEffect(() => {
+    if (!mapReady || !mapRef.current) {
+        console.log('[useEffect] mapReady или mapRef недоступны');
+        return;
+    }
+
+    const bounds = mapRef.current.getBounds();
+    if (bounds) {
+        console.log('[map bounds] triggering fetchEventsInBounds()');
+        fetchEventsInBounds();
+    } else {
+        console.warn('[map bounds] Границы карты не получены');
+    }
+    }, [mapReady, fetchEventsInBounds]);
+
 
     useEffect(() => {
         if (!mapReady || !mapRef.current) return;
@@ -189,18 +208,32 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
         const handleIdle = () => {
             const bounds = map.getBounds();
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+
+            if (center && zoom != null) {
+            localStorage.setItem(
+                'map_center',
+                JSON.stringify({ lat: center.lat(), lng: center.lng() })
+            );
+            localStorage.setItem('map_zoom', JSON.stringify(zoom));
+            }
+
             if (bounds) {
             console.log('[idle] bounds changed, fetching...', bounds.toJSON());
-            fetchEventsInBounds(bounds); // <-- теперь передаем bounds
+            fetchEventsInBounds(bounds); // передаём bounds вручную
             }
         };
 
         const listener = map.addListener('idle', handleIdle);
+        console.log('[idle] listener attached');
 
         return () => {
-            listener.remove();
+            listener.remove(); // Чистим listener при размонтировании
+            console.log('[idle] listener removed');
         };
     }, [mapReady, fetchEventsInBounds]);
+
 
   useEffect(() => {
     if (showEventList && selectedEvent != null) {
@@ -227,48 +260,54 @@ const MapLayer: React.FC<MapLayerProps> = ({
     const pendingId = initialEventIdRef.current;
 
     if (pendingId) {
-      (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
+        (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
         openEventById(pendingId);
-      });
+        });
     } else {
-      const savedCenter = localStorage.getItem('map_center');
-      const savedZoom = localStorage.getItem('map_zoom');
+        const savedCenter = localStorage.getItem('map_center');
+        const savedZoom = localStorage.getItem('map_zoom');
 
-      if (savedCenter && savedZoom) {
+        if (savedCenter && savedZoom) {
         const c = JSON.parse(savedCenter);
         const z = JSON.parse(savedZoom);
         map.setCenter(c);
         map.setZoom(z);
         console.log('[onLoad] restored center from storage', c, z);
-      } else {
-        const fallback = { lat: 46.8182, lng: 8.2275 };
+        } else {
+        const fallback = { lat: 46.8182, lng: 8.2275 }; // центр Швейцарии
         map.setCenter(fallback);
         const defaultZoom = 10;
         map.setZoom(defaultZoom);
         localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
-      }
+        }
     }
 
+    // 🔁 При каждой остановке карты — подгружаем события
     map.addListener('idle', () => {
-      const c = map.getCenter();
-      const z = map.getZoom();
+        const c = map.getCenter();
+        const z = map.getZoom();
 
-      if (c && z != null) {
+        if (c && z != null) {
         localStorage.setItem('map_center', JSON.stringify({ lat: c.lat(), lng: c.lng() }));
         localStorage.setItem('map_zoom', JSON.stringify(z));
         console.log('[idle] saved center:', c.toUrlValue(), 'zoom:', z);
-      }
+        }
 
-      fetchEventsInBounds();
+        const bounds = map.getBounds();
+        if (bounds) {
+        fetchEventsInBounds(bounds); // обязательно передаём bounds
+        }
     });
 
+    // 🔁 Дополнительно сохраняем зум (если вдруг не сохранится в idle)
     map.addListener('zoom_changed', () => {
-      const z = map.getZoom();
-      if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
+        const z = map.getZoom();
+        if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
     });
 
     console.log('[onLoad] map mounted');
-  }, [fetchEventsInBounds, openEventById]);
+    }, [fetchEventsInBounds, openEventById]);
+
 
   const handleMapUnmount = useCallback(() => {
     console.log('[onUnmount] map unmounted');

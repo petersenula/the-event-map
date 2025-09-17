@@ -121,5 +121,7 @@
 
   "Select Dates": "Select Dates",
   "Start of period": "Start of period",
-  "End of period": "End of period"
+  "End of period": "End of period",
+  "refreshing_events": "Refreshing events..."
+
 }

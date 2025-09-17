@@ -77,6 +77,8 @@
   "Select Dates": "Daten auswählen",
   "Start of period": "Beginn des Zeitraums",
   "End of period": "Ende des Zeitraums",
+  "refreshing_events": "Ereignisse werden aktualisiert...",
+
 
     "ui": {
     "showList": "Als Liste anzeigen",

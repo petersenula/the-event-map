@@ -195,7 +195,7 @@ export default function EventMap() {
   const loadedEventIds = useRef<Set<number>>(new Set());
 
   const fetchEventsInBounds = useCallback(async () => {
-    if (!mapRef.current) return;
+    if (!mapReady || !mapRef.current) return;
 
     const bounds = mapRef.current.getBounds();
     if (!bounds) return;
@@ -233,7 +233,6 @@ export default function EventMap() {
 
         const filtered = (data ?? []).filter(ev => !loadedEventIds.current.has(ev.id));
 
-        // 🔁 если новых событий нет — выходим
         if (!filtered.length) break;
 
         filtered.forEach(ev => {
@@ -259,18 +258,25 @@ export default function EventMap() {
     } catch (err) {
       console.error('Ошибка в fetchEventsInBounds:', err);
     }
-  }, []);
+  }, [mapReady, mapRef]);
+
 
   useEffect(() => {
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible') {
         console.log('[Visibilitychange] screen is visible again');
 
-        // пингуем сессию → middleware обновит токен
-        await supabase.auth.getUser().catch(() => {});
+        try {
+          // Пингуем сессию, чтобы middleware обновил токен
+          await supabase.auth.getUser();
+        } catch {
+          // молча игнорируем
+        }
 
-        // загружаем события только в пределах текущих границ
-        fetchEventsInBounds();
+        // Проверим, готова ли карта
+        if (mapReady && mapRef.current) {
+          fetchEventsInBounds();
+        }
       }
     };
 
@@ -278,16 +284,18 @@ export default function EventMap() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [fetchEventsInBounds]);
+  }, [fetchEventsInBounds, mapReady]);
+
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
 
     const bounds = mapRef.current.getBounds();
-    if (bounds) {
-      fetchEventsInBounds();
-    }
-  }, [mapReady]);
+    if (!bounds) return;
+
+    fetchEventsInBounds();
+  }, [mapReady, fetchEventsInBounds]);
+
 
   const fetchingRef = useRef(false);
   
@@ -650,15 +658,18 @@ export default function EventMap() {
   // эффекты
   // СТАЛО: ждём, когда Google Map загрузится
   // грузим события один раз при маунте — карта не нужна
-    useEffect(() => {
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
     const interval = setInterval(() => {
       if (mapRef.current?.getBounds()) {
         fetchEventsInBounds();
         clearInterval(interval);
       }
     }, 200);
+
     return () => clearInterval(interval);
-  }, [fetchEventsInBounds]);
+  }, [mapReady, fetchEventsInBounds]);
 
   useEffect(() => {
     const init = async () => {
@@ -687,12 +698,21 @@ export default function EventMap() {
         if (user) {
           setIsAuthenticated(true);
           setSession({ user });
+
           try {
             const favs = await loadFavoritesFromProfile(user.id);
             setFavorites(favs);
-          } catch {}
+          } catch (err) {
+            console.error('Ошибка загрузки избранного из профиля:', err);
+          }
+
+          // После входа загружаем события
+          if (mapReady && mapRef.current) {
+            fetchEventsInBounds();
+          }
         }
       }
+
       if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setSession(null);
@@ -701,7 +721,7 @@ export default function EventMap() {
     });
 
     return () => authListener?.subscription.unsubscribe();
-  }, [fetchEventsInBounds]);
+  }, [fetchEventsInBounds, mapReady]);
 
   useEffect(() => {
     const ping = () => { supabase.auth.getUser().catch(() => {}); };
@@ -722,16 +742,18 @@ export default function EventMap() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'events' },
         () => {
+          console.log('[Realtime] Обнаружено изменение — загружаем события...');
           fetchEventsInBounds();
         }
       )
       .subscribe();
 
-    // 🔧 Важно: очищаем синхронно
+    // 💡 Важно: очищаем канал синхронно
     return () => {
-      supabase.removeChannel(channel); // не await, иначе React ругается
+      supabase.removeChannel(channel); // НЕ await — иначе Next.js может выдать ошибку
     };
   }, [fetchEventsInBounds]);
+
 
   useEffect(() => () => { mapRef.current = null; }, []);
 
@@ -1434,19 +1456,39 @@ export default function EventMap() {
       console.log('[Cache] Очистка кэша начата...');
       setIsRefreshing(true);
 
+      // 🔠 Локализованное сообщение
+      toast(t('refreshing_events') || 'Перезагрузка событий...');
+
+      // 🗂️ Сохраняем важные ключи
       const keysToKeep = ['lang', 'map_center', 'map_zoom'];
       for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-')) keysToKeep.push(key);
+        if (key.startsWith('sb-')) keysToKeep.push(key); // session tokens
       }
+
       for (const key of Object.keys(localStorage)) {
         if (!keysToKeep.includes(key)) localStorage.removeItem(key);
       }
 
+      // 🧹 Сбрасываем кэш событий
       loadedEventIds.current.clear();
       setEvents([]);
       setFilteredEvents([]);
 
+      // 🔁 Пингуем сессию (обновит токен если истёк)
       await supabase.auth.getUser().catch(() => {});
+
+      // 🧭 Если есть координаты дома — перемещаем туда
+      const storedHome = localStorage.getItem('home_coords');
+      if (storedHome) {
+        const coords = JSON.parse(storedHome);
+        if (coords && coords.lat && coords.lng && mapRef.current) {
+          mapRef.current.panTo({ lat: coords.lat, lng: coords.lng });
+          mapRef.current.setZoom(15); // или другой zoom по умолчанию
+          console.log('[Map] Возврат домой');
+        }
+      }
+
+      // 🚀 Подгружаем события в текущих границах
       await fetchEventsInBounds();
 
       console.log('[Cache] Очистка завершена.');
