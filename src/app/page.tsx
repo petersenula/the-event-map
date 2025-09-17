@@ -127,6 +127,34 @@ type DateRange = {
   key: string;
 }[];
 
+function RefreshSpinner() {
+  return (
+    <div className="fixed top-4 right-4 flex items-center gap-2 bg-black/70 text-white px-4 py-2 rounded-xl shadow-lg z-50">
+      <svg
+        className="animate-spin h-5 w-5 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        ></path>
+      </svg>
+      <span>Обновляем...</span>
+    </div>
+  );
+}
+
 export default function EventMap() {
   const [mapReady, setMapReady] = useState(false);
   const isMobile = useIsMobile(768);
@@ -142,6 +170,7 @@ export default function EventMap() {
       setShowHomeModal(true);
     }
   };
+ const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const keysToKeep = ['map_center', 'map_zoom'];
@@ -163,6 +192,8 @@ export default function EventMap() {
     loadedEventIds.current.clear();
   };
 
+  const loadedEventIds = useRef<Set<number>>(new Set());
+
   const fetchEventsInBounds = useCallback(async () => {
     if (!mapRef.current) return;
 
@@ -177,52 +208,77 @@ export default function EventMap() {
     const minLng = sw.lng();
     const maxLng = ne.lng();
 
-    console.log('[fetchEventsInBounds] fetching events with:', {
-      minLat,
-      maxLat,
-      minLng,
-      maxLng,
-    });
+    let page = 0;
+    const pageSize = 100;
+    const newlyFetched: any[] = [];
 
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .gte('lat', minLat)
-      .lte('lat', maxLat)
-      .gte('lng', minLng)
-      .lte('lng', maxLng);
+    try {
+      while (true) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
 
-    if (error) {
-      console.error('Ошибка загрузки событий в границах карты:', error);
-      return;
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .gte('lat', minLat)
+          .lte('lat', maxLat)
+          .gte('lng', minLng)
+          .lte('lng', maxLng)
+          .range(from, to);
+
+        if (error) {
+          console.error('Ошибка загрузки событий в границах карты:', error);
+          break;
+        }
+
+        const filtered = (data ?? []).filter(ev => !loadedEventIds.current.has(ev.id));
+
+        // 🔁 если новых событий нет — выходим
+        if (!filtered.length) break;
+
+        filtered.forEach(ev => {
+          const parsed = parseLatLng(ev.lat, ev.lng);
+          const normType = normalizeType(ev.type);
+          newlyFetched.push({
+            ...ev,
+            lat: parsed?.lat ?? null,
+            lng: parsed?.lng ?? null,
+            type: normType,
+            types: normType,
+          });
+          loadedEventIds.current.add(ev.id);
+        });
+
+        page += 1;
+      }
+
+      if (newlyFetched.length) {
+        setEvents(prev => [...prev, ...newlyFetched]);
+        setFilteredEvents(prev => [...prev, ...newlyFetched]);
+      }
+    } catch (err) {
+      console.error('Ошибка в fetchEventsInBounds:', err);
     }
+  }, []);
 
-    const newEvents = (data ?? [])
-      .filter((ev: any) => !loadedEventIds.current.has(ev.id)) // фильтруем уже загруженные
-      .map((ev: any) => {
-        const parsed = parseLatLng(ev.lat, ev.lng);
-        const addr = (ev.address || '').trim();
-        const normType = normalizeType(ev.type);
-        return {
-          ...ev,
-          lat: parsed?.lat ?? null,
-          lng: parsed?.lng ?? null,
-          address: addr,
-          type: normType,
-          types: normType,
-        };
-      });
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Visibilitychange] screen is visible again');
 
-    if (newEvents.length) {
-      newEvents.forEach((ev) => loadedEventIds.current.add(ev.id));
-      setEvents((prev) => [...prev, ...newEvents]);
-      setFilteredEvents((prev) => [...prev, ...newEvents]);
-      console.log(`[fetchEventsInBounds] добавлено ${newEvents.length} событий`);
-    } else {
-      console.log('[fetchEventsInBounds] добавлено 0 событий');
-    }
-  }, [supabase, setEvents, setFilteredEvents]);
+        // пингуем сессию → middleware обновит токен
+        await supabase.auth.getUser().catch(() => {});
 
+        // загружаем события только в пределах текущих границ
+        fetchEventsInBounds();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [fetchEventsInBounds]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -566,20 +622,6 @@ export default function EventMap() {
 
     return () => clearInterval(interval);
   }, [events]);
-
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[Visibilitychange] screen is visible again');
-        fetchEventsInBounds(); // догружаем только новые события
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [fetchEventsInBounds]);
 
   const fetchEvents = useCallback(async () => {
     if (fetchingRef.current) return;
@@ -1112,8 +1154,6 @@ export default function EventMap() {
 
   const promoText = t('auth.promo');
 
-  const loadedEventIds = useRef<Set<number>>(new Set());
-
   const handleSmsSend = async () => {
     setSmsError(null);
     if (!phone.trim()) { setSmsError(t('auth.phone_required')); return; }
@@ -1392,32 +1432,29 @@ export default function EventMap() {
   const handleClearStorage = async () => {
     try {
       console.log('[Cache] Очистка кэша начата...');
+      setIsRefreshing(true);
 
-      // сохраняем важные ключи
       const keysToKeep = ['lang', 'map_center', 'map_zoom'];
       for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-')) keysToKeep.push(key); // токены сессии
+        if (key.startsWith('sb-')) keysToKeep.push(key);
       }
-
       for (const key of Object.keys(localStorage)) {
         if (!keysToKeep.includes(key)) localStorage.removeItem(key);
       }
 
-      // 🔑 сбрасываем список уже загруженных событий
       loadedEventIds.current.clear();
-      setEvents([]); // очистим state, чтобы избежать дубликатов
+      setEvents([]);
       setFilteredEvents([]);
 
-      // пингуем сессию — middleware обновит токен если он истёк
       await supabase.auth.getUser().catch(() => {});
-
-      // загружаем заново события в текущих границах
       await fetchEventsInBounds();
 
       console.log('[Cache] Очистка завершена.');
     } catch (err) {
       console.error('[Cache] Ошибка при очистке:', err);
       alert('Произошла ошибка при очистке кэша.');
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -1431,6 +1468,7 @@ export default function EventMap() {
 
   return (
     <ClientOnly>
+      {isRefreshing && <RefreshSpinner />}
       {loadError && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 text-red-800 px-4 py-2 rounded shadow">
           {loadError}
@@ -1468,6 +1506,8 @@ export default function EventMap() {
           favorites={favorites}
           loadedEventIds={loadedEventIds}
           resetEvents={resetEvents}
+          setEvents={setEvents}
+          setFilteredEvents={setFilteredEvents} 
         />
 
       {isMobile ? (
