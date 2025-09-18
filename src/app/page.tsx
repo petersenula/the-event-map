@@ -194,72 +194,101 @@ export default function EventMap() {
 
   const loadedEventIds = useRef<Set<number>>(new Set());
 
-  const fetchEventsInBounds = useCallback(async () => {
-    if (!mapReady || !mapRef.current) return;
-
-    const bounds = mapRef.current.getBounds();
-    if (!bounds) return;
-
-    const ne = bounds.getNorthEast();
-    const sw = bounds.getSouthWest();
-
-    const minLat = sw.lat();
-    const maxLat = ne.lat();
-    const minLng = sw.lng();
-    const maxLng = ne.lng();
-
-    let page = 0;
-    const pageSize = 100;
-    const newlyFetched: any[] = [];
-
-    try {
-      while (true) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .gte('lat', minLat)
-          .lte('lat', maxLat)
-          .gte('lng', minLng)
-          .lte('lng', maxLng)
-          .range(from, to);
-
-        if (error) {
-          console.error('Ошибка загрузки событий в границах карты:', error);
-          break;
+  const waitForBounds = async (): Promise<google.maps.LatLngBounds | null> => {
+    return new Promise((resolve) => {
+      const tryGetBounds = () => {
+        if (!mapReady || !mapRef.current) {
+          console.log('[waitForBounds] карта ещё не готова, пробуем снова через 200мс');
+          setTimeout(tryGetBounds, 200);
+          return;
         }
 
-        const filtered = (data ?? []).filter(ev => !loadedEventIds.current.has(ev.id));
+        const currentBounds = mapRef.current.getBounds();
+        if (!currentBounds) {
+          console.log('[waitForBounds] границы ещё не готовы, пробуем снова через 200мс');
+          setTimeout(tryGetBounds, 200);
+          return;
+        }
 
-        if (!filtered.length) break;
+        console.log('[waitForBounds] границы получены');
+        resolve(currentBounds);
+      };
 
-        filtered.forEach(ev => {
-          const parsed = parseLatLng(ev.lat, ev.lng);
-          const normType = normalizeType(ev.type);
-          newlyFetched.push({
-            ...ev,
-            lat: parsed?.lat ?? null,
-            lng: parsed?.lng ?? null,
-            type: normType,
-            types: normType,
+      tryGetBounds();
+    });
+  };
+
+  const fetchEventsInBounds = useCallback(
+    async (forcedBounds?: google.maps.LatLngBounds) => {
+      const boundsToUse = forcedBounds || (await waitForBounds());
+      if (!boundsToUse) {
+        console.warn('[fetchEventsInBounds] Границы не получены, пропускаем загрузку');
+        return;
+      }
+
+      const ne = boundsToUse.getNorthEast();
+      const sw = boundsToUse.getSouthWest();
+
+      const minLat = sw.lat();
+      const maxLat = ne.lat();
+      const minLng = sw.lng();
+      const maxLng = ne.lng();
+
+      let page = 0;
+      const pageSize = 100;
+      const newlyFetched: any[] = [];
+
+      try {
+        while (true) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .gte('lat', minLat)
+            .lte('lat', maxLat)
+            .gte('lng', minLng)
+            .lte('lng', maxLng)
+            .range(from, to);
+
+          if (error) {
+            console.error('Ошибка загрузки событий в границах карты:', error);
+            break;
+          }
+
+          const filtered = (data ?? []).filter(
+            (ev) => !loadedEventIds.current.has(ev.id)
+          );
+
+          if (!filtered.length) break;
+
+          filtered.forEach((ev) => {
+            const parsed = parseLatLng(ev.lat, ev.lng);
+            const normType = normalizeType(ev.type);
+            newlyFetched.push({
+              ...ev,
+              lat: parsed?.lat ?? null,
+              lng: parsed?.lng ?? null,
+              type: normType,
+              types: normType,
+            });
+            loadedEventIds.current.add(ev.id);
           });
-          loadedEventIds.current.add(ev.id);
-        });
 
-        page += 1;
+          page += 1;
+        }
+
+        if (newlyFetched.length) {
+          setEvents((prev) => [...prev, ...newlyFetched]);
+          setFilteredEvents((prev) => [...prev, ...newlyFetched]);
+        }
+      } catch (err) {
+        console.error('Ошибка в fetchEventsInBounds:', err);
       }
-
-      if (newlyFetched.length) {
-        setEvents(prev => [...prev, ...newlyFetched]);
-        setFilteredEvents(prev => [...prev, ...newlyFetched]);
-      }
-    } catch (err) {
-      console.error('Ошибка в fetchEventsInBounds:', err);
-    }
-  }, [mapReady, mapRef]);
-
+    },
+    [mapReady, mapRef, loadedEventIds, setEvents, setFilteredEvents]
+  );
 
   useEffect(() => {
     const handleVisibility = async () => {

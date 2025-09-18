@@ -278,21 +278,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
         localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
         }
     }
-
-    // Дожидаемся границ перед первой загрузкой
-    const waitForBounds = () => {
-        const bounds = map.getBounds();
-        if (!bounds) {
-        console.log('[onLoad] waiting for bounds...');
-        setTimeout(waitForBounds, 150);
-        return;
-        }
-
-        console.log('[onLoad] bounds are ready, fetching events');
-        fetchEventsInBounds(bounds);
-    };
-    waitForBounds();
-
     // Слушатель на idle — грузим новые события при каждой остановке карты
     map.addListener('idle', () => {
         const c = map.getCenter();
