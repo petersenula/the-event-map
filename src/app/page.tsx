@@ -170,15 +170,21 @@ export default function EventMap() {
       setShowHomeModal(true);
     }
   };
- const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    const keysToKeep = ['map_center', 'map_zoom'];
-    const allKeys = Object.keys(localStorage);
-    for (const key of allKeys) {
-      if (!keysToKeep.includes(key)) {
-        localStorage.removeItem(key);
-      }
+    const keep = new Set([
+      'map_center',
+      'map_zoom',
+      'lang',
+      'favorites',      // избранное для неавторизованных
+      'viewedEvents',   // просмотренные
+      'home_coords',    // дом
+    ]);
+
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith('sb-')) continue; // ⚠️ НЕ трогаем supabase-сессию
+      if (!keep.has(key)) localStorage.removeItem(key);
     }
   }, []);
 
@@ -193,6 +199,21 @@ export default function EventMap() {
   };
 
   const loadedEventIds = useRef<Set<number>>(new Set());
+
+  const ensureBounds = async (): Promise<google.maps.LatLngBounds | null> => {
+    let tries = 0;
+    while (tries < 50) {             // ~7.5 сек максимум при delay=150ms
+      const map = mapRef.current;
+      if (map) {
+        const b = map.getBounds?.();
+        if (b) return b;
+      }
+      await new Promise(r => setTimeout(r, 150));
+      tries++;
+    }
+    console.warn('[ensureBounds] не дождались границ');
+    return null;
+  };
 
   const waitForReadyMapAndBounds = async (): Promise<google.maps.LatLngBounds | null> => {
     return new Promise((resolve) => {
@@ -219,97 +240,89 @@ export default function EventMap() {
     });
   };
 
-  const fetchEventsInBounds = useCallback(async () => {
-    const boundsToUse = await waitForReadyMapAndBounds();
-    if (!boundsToUse) {
-      console.warn('[fetchEventsInBounds] границы так и не получены');
-      return;
-    }
+  const fetchingRef = useRef(false);
 
-    const ne = boundsToUse.getNorthEast();
-    const sw = boundsToUse.getSouthWest();
-
-    const minLat = sw.lat();
-    const maxLat = ne.lat();
-    const minLng = sw.lng();
-    const maxLng = ne.lng();
-
-    let page = 0;
-    const pageSize = 100;
-    const newlyFetched: any[] = [];
-
+  const fetchEventsInBounds = useCallback(async (maybeBounds?: google.maps.LatLngBounds) => {
+    if (fetchingRef.current) return;            // защита от дубликатов
+    fetchingRef.current = true;
     try {
-      while (true) {
+      const bounds = maybeBounds ?? (await ensureBounds());
+      if (!bounds) return;
+
+      const ne = bounds.getNorthEast();
+      const sw = bounds.getSouthWest();
+      const minLat = sw.lat(), maxLat = ne.lat();
+      const minLng = sw.lng(), maxLng = ne.lng();
+
+      const pageSize = 200;                     // для подгрузок
+      let page = 0;
+      const newly: any[] = [];
+
+      for (;;) {
         const from = page * pageSize;
-        const to = from + pageSize - 1;
+        const to   = from + pageSize - 1;
 
         const { data, error } = await supabase
           .from('events')
           .select('*')
-          .gte('lat', minLat)
-          .lte('lat', maxLat)
-          .gte('lng', minLng)
-          .lte('lng', maxLng)
+          .gte('lat', minLat).lte('lat', maxLat)
+          .gte('lng', minLng).lte('lng', maxLng)
           .range(from, to);
 
-        if (error) {
-          console.error('Ошибка загрузки событий в границах карты:', error);
-          break;
+        if (error) { console.error('fetch error:', error); break; }
+        const batch = data ?? [];
+
+        // если страница пустая — точно конец
+        if (batch.length === 0) break;
+
+        // фильтруем уже загруженные
+        const fresh = batch.filter(ev => !loadedEventIds.current.has(ev.id));
+
+        // складываем всё новое
+        for (const ev of fresh) {
+          const parsed = parseFloat(ev.lat); const parsed2 = parseFloat(ev.lng);
+          newly.push({ ...ev, lat: parsed, lng: parsed2, types: normalizeType(ev.type) });
+          loadedEventIds.current.add(ev.id);
         }
 
-        const filtered = (data ?? []).filter(ev => !loadedEventIds.current.has(ev.id));
-        if (!filtered.length) break;
+        // если страница меньше pageSize — тоже конец
+        if (batch.length < pageSize) break;
 
-        filtered.forEach(ev => {
-          const parsed = parseLatLng(ev.lat, ev.lng);
-          const normType = normalizeType(ev.type);
-          newlyFetched.push({
-            ...ev,
-            lat: parsed?.lat ?? null,
-            lng: parsed?.lng ?? null,
-            type: normType,
-            types: normType,
-          });
-          loadedEventIds.current.add(ev.id);
-        });
-
-        page += 1;
+        // иначе идём дальше
+        page++;
       }
 
-      if (newlyFetched.length) {
-        setEvents(prev => [...prev, ...newlyFetched]);
-        setFilteredEvents(prev => [...prev, ...newlyFetched]);
+      if (newly.length) {
+        setEvents(prev => [...prev, ...newly]);
+        setFilteredEvents(prev => [...prev, ...newly]);
       }
-    } catch (err) {
-      console.error('Ошибка в fetchEventsInBounds:', err);
+    } catch (e) {
+      console.error('fetchEventsInBounds failed:', e);
+    } finally {
+      fetchingRef.current = false;
     }
-  }, [mapReady, mapRef]);
+  }, [setEvents, setFilteredEvents]);
 
   useEffect(() => {
-    const handleVisibility = async () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[Visibilitychange] screen is visible again');
+    const onVisibleOrFocus = async () => {
+      if (document.visibilityState !== 'visible') return;
 
-        try {
-          // Пингуем сессию, чтобы middleware обновил токен
-          await supabase.auth.getUser();
-        } catch {
-          // молча игнорируем
-        }
+      try { await supabase.auth.getUser(); } catch {}
 
-        // Проверим, готова ли карта
-        if (mapReady && mapRef.current) {
-          fetchEventsInBounds();
-        }
-      }
+      // Ждём, пока карта и её границы реально будут
+      const bounds = await waitForReadyMapAndBounds();
+      if (!bounds) return;
+
+      await fetchEventsInBounds(bounds);
     };
 
-    document.addEventListener('visibilitychange', handleVisibility);
+    document.addEventListener('visibilitychange', onVisibleOrFocus);
+    window.addEventListener('focus', onVisibleOrFocus);
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('visibilitychange', onVisibleOrFocus);
+      window.removeEventListener('focus', onVisibleOrFocus);
     };
-  }, [fetchEventsInBounds, mapReady]);
-
+  }, [fetchEventsInBounds, waitForReadyMapAndBounds]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -319,9 +332,6 @@ export default function EventMap() {
 
     fetchEventsInBounds();
   }, [mapReady, fetchEventsInBounds]);
-
-
-  const fetchingRef = useRef(false);
   
   const translateTypeUI = useCallback((type: string) => {
     const key = (typeTranslationKeys as Record<string, string>)[type];
@@ -654,30 +664,6 @@ export default function EventMap() {
 
     return () => clearInterval(interval);
   }, [events]);
-
-  const fetchEvents = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-    try {
-      const { data, error } = await supabase.from('events').select('*');
-      if (error) {
-        console.error('fetchEvents error:', error);
-        setLoadError(t('errors.loading_events'));
-        return;
-      }
-      const list = (data ?? []).map((ev: any) => {
-        const parsed = parseLatLng(ev.lat, ev.lng);
-        const addr = (ev.address || '').trim();
-        return { ...ev, lat: parsed?.lat ?? null, lng: parsed?.lng ?? null };
-      });
-      setEvents(list);
-      setFilteredEvents(list);
-    } catch (e) {
-      console.error('❌ fetchEvents failed', e);
-    } finally {
-      fetchingRef.current = false;
-    }
-  }, []);
 
   // эффекты
   // СТАЛО: ждём, когда Google Map загрузится

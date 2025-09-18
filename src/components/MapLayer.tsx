@@ -33,7 +33,7 @@ interface MapLayerProps {
   downloadICS: (ics: string, filename: string) => void;
   makeGoogleCalendarUrl: (ev: any) => string;
   shareEvent: (ev: any) => void;
-  fetchEventsInBounds: () => void;
+  fetchEventsInBounds: (bounds?: google.maps.LatLngBounds | null) => void | Promise<void>;
   openEventById: (id: number) => void;
   center: { lat: number; lng: number };
   showEventList: boolean;
@@ -108,35 +108,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
     } catch {}
   }, []);
 
-    const rebindIdleListener = useCallback(() => {
-    const map = mapRef.current;
-    if (!map) {
-        console.warn('[idle listener] mapRef.current отсутствует');
-        return;
-    }
-
-    // 🧹 Удаляем предыдущие слушатели idle (на всякий случай)
-    (window as any).google.maps.event.clearListeners(map, 'idle');
-
-    map.addListener('idle', () => {
-        const center = map.getCenter();
-        const zoom = map.getZoom();
-
-        if (center && zoom != null) {
-        localStorage.setItem(
-            'map_center',
-            JSON.stringify({ lat: center.lat(), lng: center.lng() })
-        );
-        localStorage.setItem('map_zoom', JSON.stringify(zoom));
-        }
-
-        console.log('[idle listener] сработал → вызов fetchEventsInBounds');
-        fetchEventsInBounds(); // 🔁 загрузка событий при остановке карты
-    });
-
-    console.log('[idle listener] перепривязан заново');
-    }, [fetchEventsInBounds, mapRef]);
-
   useEffect(() => {
     const checkAndSetHomeLocation = async () => {
         try {
@@ -179,12 +150,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, []);
 
     useEffect(() => {
-    if (mapReady && mapRef.current) {
-        rebindIdleListener();
-    }
-    }, [mapReady, rebindIdleListener]);
-
-    useEffect(() => {
     if (!mapReady) {
         console.log('[useEffect] карта ещё не готова');
         return;
@@ -193,65 +158,40 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }, [mapReady]);
 
     useEffect(() => {
-        if (!mapReady || !mapRef.current) return;
+        if (showEventList && selectedEvent != null) {
+        scrollToEvent(selectedEvent);
+        }
+    }, [showEventList, selectedEvent, filteredByView, visibleCount]);
 
-        const map = mapRef.current;
+    useEffect(() => {
+        if (!mapRef?.current) {
+            console.warn('mapRef.current is undefined');
+            return;
+        }
+        if (!mapRef.current) return;
+        mapRef.current.setOptions({
+        streetViewControl: !isMobile,
+        mapTypeControl: !isMobile,
+        fullscreenControl: !isMobile,
+        });
+    }, [isMobile]);
 
-        const handleIdle = () => {
-            const bounds = map.getBounds();
-            const center = map.getCenter();
-            const zoom = map.getZoom();
+   const initializedRef = useRef(false);
 
-            if (center && zoom != null) {
-            localStorage.setItem(
-                'map_center',
-                JSON.stringify({ lat: center.lat(), lng: center.lng() })
-            );
-            localStorage.setItem('map_zoom', JSON.stringify(zoom));
-            }
-
-            if (bounds) {
-            console.log('[idle] bounds changed, fetching...', bounds.toJSON());
-            fetchEventsInBounds(bounds); // передаём bounds вручную
-            }
-        };
-
-        const listener = map.addListener('idle', handleIdle);
-        console.log('[idle] listener attached');
-
-        return () => {
-            listener.remove(); // Чистим listener при размонтировании
-            console.log('[idle] listener removed');
-        };
-    }, [mapReady, fetchEventsInBounds]);
-
-
-  useEffect(() => {
-    if (showEventList && selectedEvent != null) {
-      scrollToEvent(selectedEvent);
-    }
-  }, [showEventList, selectedEvent, filteredByView, visibleCount]);
-
-  useEffect(() => {
-     if (!mapRef?.current) {
-        console.warn('mapRef.current is undefined');
-        return;
-    }
-      if (!mapRef.current) return;
-      mapRef.current.setOptions({
-      streetViewControl: !isMobile,
-      mapTypeControl: !isMobile,
-      fullscreenControl: !isMobile,
-    });
-  }, [isMobile]);
-
-  const handleMapLoad = useCallback((map: google.maps.Map) => {
+    const handleMapLoad = useCallback((map: google.maps.Map) => {
     console.log('[onLoad] map initializing...');
     mapRef.current = map;
 
+    // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.
+    if (initializedRef.current) {
+        console.log('[onLoad] already initialized (StrictMode duplicate), skipping init');
+        return;
+    }
+    initializedRef.current = true;
+
+    // --- восстановление центра/зума (твой код оставляем как было) ---
     const pendingId = initialEventIdRef.current;
 
-    // Восстанавливаем позицию карты из localStorage или ставим fallback
     if (pendingId) {
         (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
         openEventById(pendingId);
@@ -259,7 +199,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
     } else {
         const savedCenter = localStorage.getItem('map_center');
         const savedZoom = localStorage.getItem('map_zoom');
-
         if (savedCenter && savedZoom) {
         try {
             const c = JSON.parse(savedCenter);
@@ -271,39 +210,64 @@ const MapLayer: React.FC<MapLayerProps> = ({
             console.warn('[onLoad] failed to parse saved center/zoom');
         }
         } else {
-        const fallback = { lat: 46.8182, lng: 8.2275 }; // центр Швейцарии
+        const fallback = { lat: 46.8182, lng: 8.2275 };
         map.setCenter(fallback);
         const defaultZoom = 10;
         map.setZoom(defaultZoom);
         localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
         }
     }
-    // Слушатель на idle — грузим новые события при каждой остановке карты
-    map.addListener('idle', () => {
+
+    // 👉 Иногда контейнер уже виден, но Google не пересчитал размеры.
+    // Форсируем пересчёт и рецентрирование (два раза с маленькой задержкой).
+    const forceResize = () => {
+        try {
+        (window as any).google.maps.event.trigger(map, 'resize');
         const c = map.getCenter();
-        const z = map.getZoom();
+        if (c) map.setCenter(c);
+        } catch {}
+    };
+    setTimeout(forceResize, 0);
+    setTimeout(forceResize, 300);
 
-        if (c && z != null) {
-        localStorage.setItem('map_center', JSON.stringify({ lat: c.lat(), lng: c.lng() }));
-        localStorage.setItem('map_zoom', JSON.stringify(z));
-        console.log('[idle] saved center:', c.toUrlValue(), 'zoom:', z);
+    // 👉 Одноразовый 'idle' — это точка, когда проекция готова и есть bounds.
+    const once = map.addListener('idle', () => {
+        console.log('[onLoad] first idle — map ready');
+        const b = map.getBounds();
+        if (b) {
+        fetchEventsInBounds(b); // передаём готовые границы
+        } else {
+        // резерв: если вдруг idle без границ, подождём чуть-чуть
+        setTimeout(() => {
+            const bb = map.getBounds();
+            if (bb) fetchEventsInBounds(bb);
+        }, 200);
         }
-
-        const bounds = map.getBounds();
-        if (bounds) {
-        console.log('[idle] bounds changed, fetching events...');
-        fetchEventsInBounds(bounds);
-        }
+        (window as any).google.maps.event.removeListener(once);
     });
 
-    // Слушатель на zoom_changed — чтобы зум всегда был актуальный
+    // 👉 Постоянный 'idle' — подгрузка при движении/зуме (с лёгким debounce)
+    let idleTimer: any;
+    map.addListener('idle', () => {
+        const b = map.getBounds();
+        if (!b) return;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+        console.log('[idle] fetch in bounds');
+        fetchEventsInBounds(b);
+        }, 200);
+    });
+
+    // Сохраняем zoom
     map.addListener('zoom_changed', () => {
         const z = map.getZoom();
         if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
     });
 
+    // Сообщаем наверх, что карта готова
+    setMapReady(true);
     console.log('[onLoad] map mounted');
-    }, [fetchEventsInBounds, openEventById]);
+    }, [fetchEventsInBounds, openEventById, setMapReady]);
 
 
   const handleMapUnmount = useCallback(() => {
