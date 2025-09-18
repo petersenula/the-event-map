@@ -184,22 +184,13 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }
     }, [mapReady, rebindIdleListener]);
 
-
     useEffect(() => {
-    if (!mapReady || !mapRef.current) {
-        console.log('[useEffect] mapReady или mapRef недоступны');
+    if (!mapReady) {
+        console.log('[useEffect] карта ещё не готова');
         return;
     }
-
-    const bounds = mapRef.current.getBounds();
-    if (bounds) {
-        console.log('[map bounds] triggering fetchEventsInBounds()');
-        fetchEventsInBounds();
-    } else {
-        console.warn('[map bounds] Границы карты не получены');
-    }
-    }, [mapReady, fetchEventsInBounds]);
-
+    console.log('[useEffect] карта готова, но ждём handleMapLoad для загрузки событий');
+    }, [mapReady]);
 
     useEffect(() => {
         if (!mapReady || !mapRef.current) return;
@@ -255,10 +246,12 @@ const MapLayer: React.FC<MapLayerProps> = ({
   }, [isMobile]);
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
+    console.log('[onLoad] map initializing...');
     mapRef.current = map;
 
     const pendingId = initialEventIdRef.current;
 
+    // Восстанавливаем позицию карты из localStorage или ставим fallback
     if (pendingId) {
         (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
         openEventById(pendingId);
@@ -268,11 +261,15 @@ const MapLayer: React.FC<MapLayerProps> = ({
         const savedZoom = localStorage.getItem('map_zoom');
 
         if (savedCenter && savedZoom) {
-        const c = JSON.parse(savedCenter);
-        const z = JSON.parse(savedZoom);
-        map.setCenter(c);
-        map.setZoom(z);
-        console.log('[onLoad] restored center from storage', c, z);
+        try {
+            const c = JSON.parse(savedCenter);
+            const z = JSON.parse(savedZoom);
+            map.setCenter(c);
+            map.setZoom(z);
+            console.log('[onLoad] restored center from storage', c, z);
+        } catch {
+            console.warn('[onLoad] failed to parse saved center/zoom');
+        }
         } else {
         const fallback = { lat: 46.8182, lng: 8.2275 }; // центр Швейцарии
         map.setCenter(fallback);
@@ -282,7 +279,21 @@ const MapLayer: React.FC<MapLayerProps> = ({
         }
     }
 
-    // 🔁 При каждой остановке карты — подгружаем события
+    // Дожидаемся границ перед первой загрузкой
+    const waitForBounds = () => {
+        const bounds = map.getBounds();
+        if (!bounds) {
+        console.log('[onLoad] waiting for bounds...');
+        setTimeout(waitForBounds, 150);
+        return;
+        }
+
+        console.log('[onLoad] bounds are ready, fetching events');
+        fetchEventsInBounds(bounds);
+    };
+    waitForBounds();
+
+    // Слушатель на idle — грузим новые события при каждой остановке карты
     map.addListener('idle', () => {
         const c = map.getCenter();
         const z = map.getZoom();
@@ -295,11 +306,12 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
         const bounds = map.getBounds();
         if (bounds) {
-        fetchEventsInBounds(bounds); // обязательно передаём bounds
+        console.log('[idle] bounds changed, fetching events...');
+        fetchEventsInBounds(bounds);
         }
     });
 
-    // 🔁 Дополнительно сохраняем зум (если вдруг не сохранится в idle)
+    // Слушатель на zoom_changed — чтобы зум всегда был актуальный
     map.addListener('zoom_changed', () => {
         const z = map.getZoom();
         if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
