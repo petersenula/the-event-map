@@ -27,6 +27,7 @@ import DesktopOverlay from '@/components/overlays/DesktopOverlay';
 import MobileOverlay from "@/components/overlays/MobileOverlay";
 import MapLayer from '@/components/MapLayer'; 
 import { isDateInRange } from '../lib/date';
+import AuthDialog from '@/components/AuthDialog';
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -177,8 +178,6 @@ export default function EventMap() {
       'map_center',
       'map_zoom',
       'lang',
-      'favorites',      // избранное для неавторизованных
-      'viewedEvents',   // просмотренные
       'home_coords',    // дом
     ]);
 
@@ -215,24 +214,60 @@ export default function EventMap() {
     return null;
   };
 
-  const waitForReadyMapAndBounds = async (): Promise<google.maps.LatLngBounds | null> => {
+  const waitForReadyMapAndBoundsAndSession = async (): Promise<google.maps.LatLngBounds | null> => {
+    // 1. ⏳ Ждём восстановления сессии
+    let tries = 0;
+    const maxSessionTries = 10;
+    const sessionDelay = 300;
+
+    while (tries < maxSessionTries) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session || tries === maxSessionTries - 1) {
+        if (session) {
+          console.log('[waitForReadyMapAndBoundsAndSession] сессия восстановлена');
+        } else {
+          console.warn('[waitForReadyMapAndBoundsAndSession] сессия не восстановлена, продолжаем без неё');
+        }
+        break;
+      }
+
+      console.log(`[waitForReadyMapAndBoundsAndSession] сессия не восстановлена, попытка ${tries + 1}`);
+      await new Promise((r) => setTimeout(r, sessionDelay));
+      tries++;
+    }
+
+    // 2. ⏳ Ждём карту и границы
     return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 50; // 50 * 200ms = 10 секунд
+
       const tryGetBounds = () => {
-        // ждём пока карта проинициализируется
         if (!mapReady || !mapRef.current) {
-          console.log('[waitForReadyMapAndBounds] карта ещё не готова, повтор через 200мс');
+          console.log('[waitForReadyMapAndBoundsAndSession] карта ещё не готова, повтор через 200мс');
+          attempts++;
+          if (attempts >= maxAttempts) {
+            console.warn('[waitForReadyMapAndBoundsAndSession] карта так и не готова, отмена');
+            resolve(null);
+            return;
+          }
           setTimeout(tryGetBounds, 200);
           return;
         }
 
-        const currentBounds = mapRef.current.getBounds();
+        const currentBounds = mapRef.current.getBounds?.();
         if (!currentBounds) {
-          console.log('[waitForReadyMapAndBounds] границы ещё не готовы, повтор через 200мс');
+          console.log('[waitForReadyMapAndBoundsAndSession] границы ещё не готовы, повтор через 200мс');
+          attempts++;
+          if (attempts >= maxAttempts) {
+            console.warn('[waitForReadyMapAndBoundsAndSession] границы так и не появились, отмена');
+            resolve(null);
+            return;
+          }
           setTimeout(tryGetBounds, 200);
           return;
         }
 
-        console.log('[waitForReadyMapAndBounds] карта и границы готовы');
+        console.log('[waitForReadyMapAndBoundsAndSession] карта и границы готовы');
         resolve(currentBounds);
       };
 
@@ -241,6 +276,65 @@ export default function EventMap() {
   };
 
   const fetchingRef = useRef(false);
+
+  async function waitForSessionRestore(timeoutMs = 3000): Promise<boolean> {
+    const start = Date.now();
+
+    for (;;) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return true;
+
+      if (Date.now() - start > timeoutMs) return false;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+  }
+
+  const handleMapSoftReload = () => {
+    const center = mapRef.current?.getCenter?.()?.toJSON?.();
+    const zoom = mapRef.current?.getZoom?.();
+    if (center && zoom !== undefined) {
+      localStorage.setItem('map_reload_center', JSON.stringify(center));
+      localStorage.setItem('map_reload_zoom', zoom.toString());
+      localStorage.setItem('map_reload_triggered', 'true'); // ⚠️ чтобы понять, что был soft reload
+    }
+    window.location.reload();
+  };
+
+  // 🧠 Восстанавливаем центр/зум после soft reload, если он действительно был
+  useEffect(() => {
+    const triggered = localStorage.getItem('map_reload_triggered');
+    if (triggered !== 'true') return;
+
+    const restoreAfterMapReady = async () => {
+      const maxTries = 15;
+      let tries = 0;
+
+      while ((!mapRef.current || !mapRef.current.getBounds?.()) && tries < maxTries) {
+        await new Promise(res => setTimeout(res, 200));
+        tries++;
+      }
+
+      const savedCenter = localStorage.getItem('map_reload_center');
+      const savedZoom = localStorage.getItem('map_reload_zoom');
+
+      if (savedCenter && savedZoom && mapRef.current) {
+        try {
+          const center = JSON.parse(savedCenter);
+          const zoom = parseInt(savedZoom, 10);
+          mapRef.current.setZoom(zoom);
+          mapRef.current.panTo(center);
+          console.log('[Map] Восстановлены центр и зум после soft reload');
+        } catch {
+          console.warn('[Map] Ошибка при восстановлении центра/зума');
+        }
+      }
+
+      // 🧽 Очищаем флаг, чтобы не срабатывало снова
+      localStorage.removeItem('map_reload_triggered');
+    };
+
+    restoreAfterMapReady();
+  }, []);
 
   const fetchEventsInBounds = useCallback(async (maybeBounds?: google.maps.LatLngBounds) => {
     if (fetchingRef.current) return;            // защита от дубликатов
@@ -304,16 +398,23 @@ export default function EventMap() {
   }, [setEvents, setFilteredEvents]);
 
   useEffect(() => {
-    const onVisibleOrFocus = async () => {
-      if (document.visibilityState !== 'visible') return;
+    const onVisibleOrFocus = () => {
+      const centerRaw = typeof window !== 'undefined' ? localStorage.getItem('map_center') : null;
+      const zoomRaw = typeof window !== 'undefined' ? localStorage.getItem('map_zoom') : null;
 
-      try { await supabase.auth.getUser(); } catch {}
+      if (centerRaw && zoomRaw && mapRef.current) {
+        try {
+          const parsedCenter = JSON.parse(centerRaw);
+          const parsedZoom = parseInt(zoomRaw, 10);
+          mapRef.current.setCenter(parsedCenter);
+          mapRef.current.setZoom(parsedZoom);
+          console.log('[onVisibleOrFocus] восстановили карту из map_center/map_zoom');
+        } catch (e) {
+          console.warn('[onVisibleOrFocus] не смогли восстановить центр/зум');
+        }
+      }
 
-      // Ждём, пока карта и её границы реально будут
-      const bounds = await waitForReadyMapAndBounds();
-      if (!bounds) return;
-
-      await fetchEventsInBounds(bounds);
+      handleMapSoftReload();
     };
 
     document.addEventListener('visibilitychange', onVisibleOrFocus);
@@ -322,7 +423,7 @@ export default function EventMap() {
       document.removeEventListener('visibilitychange', onVisibleOrFocus);
       window.removeEventListener('focus', onVisibleOrFocus);
     };
-  }, [fetchEventsInBounds, waitForReadyMapAndBounds]);
+  }, []);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -399,6 +500,46 @@ export default function EventMap() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const mapStatus = !isLoaded ? 'loading' : (loadError ? 'error' : 'ready');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (data?.session) {
+        console.log('🔁 Сессия восстановлена:', data.session);
+        setIsAuthenticated(true);
+      } else {
+        console.log('❌ Сессия отсутствует:', error);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkSession();
+
+    // 🧠 При возвращении на экран — ещё раз проверяем
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  // 📣 Подписка на изменение авторизации
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('📣 Auth state change:', event, session);
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
   const [viewCount, setViewCount] = useState(0);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
@@ -1461,53 +1602,8 @@ export default function EventMap() {
     // === ВНУТРЕННИЕ КОМПОНЕНТЫ (используют состояния сверху) ===
   // Полная очистка localStorage с перезагрузкой
 
-  const handleClearStorage = async () => {
-    try {
-      console.log('[Cache] Очистка кэша начата...');
-      setIsRefreshing(true);
-
-      // 🔠 Локализованное сообщение
-      toast(t('refreshing_events') || 'Перезагрузка событий...');
-
-      // 🗂️ Сохраняем важные ключи
-      const keysToKeep = ['lang', 'map_center', 'map_zoom'];
-      for (const key of Object.keys(localStorage)) {
-        if (key.startsWith('sb-')) keysToKeep.push(key); // session tokens
-      }
-
-      for (const key of Object.keys(localStorage)) {
-        if (!keysToKeep.includes(key)) localStorage.removeItem(key);
-      }
-
-      // 🧹 Сбрасываем кэш событий
-      loadedEventIds.current.clear();
-      setEvents([]);
-      setFilteredEvents([]);
-
-      // 🔁 Пингуем сессию (обновит токен если истёк)
-      await supabase.auth.getUser().catch(() => {});
-
-      // 🧭 Если есть координаты дома — перемещаем туда
-      const storedHome = localStorage.getItem('home_coords');
-      if (storedHome) {
-        const coords = JSON.parse(storedHome);
-        if (coords && coords.lat && coords.lng && mapRef.current) {
-          mapRef.current.panTo({ lat: coords.lat, lng: coords.lng });
-          mapRef.current.setZoom(15); // или другой zoom по умолчанию
-          console.log('[Map] Возврат домой');
-        }
-      }
-
-      // 🚀 Подгружаем события в текущих границах
-      await fetchEventsInBounds();
-
-      console.log('[Cache] Очистка завершена.');
-    } catch (err) {
-      console.error('[Cache] Ошибка при очистке:', err);
-      alert('Произошла ошибка при очистке кэша.');
-    } finally {
-      setIsRefreshing(false);
-    }
+  const handleClearStorage = () => {
+    window.location.reload();
   };
 
   const handleNavigate = (path: string) => {
@@ -1840,130 +1936,14 @@ export default function EventMap() {
         </div>
       )}
 
-      {showAuthPrompt && (
-        <div className="absolute inset-0 bg-neutral-800 bg-opacity-70 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-[90%] text-center space-y-4 border border-gray-300">
-            <h2 className="text-base text-gray-800 font-semibold leading-snug">{t('auth.promo')}</h2>
-
-            <div className="space-y-2">
-              <button
-                onClick={async () => {
-                  try {
-                    const { data, error } = await supabase.auth.signInWithOAuth({
-                      provider: 'google',
-                      options: {
-                        redirectTo: `${window.location.origin}/auth/callback`,
-                      },
-                    });
-
-                    if (error) {
-                      alert(t('auth.error') + ': ' + error.message);
-                      return;
-                    }
-
-                    // Ждём немного, чтобы Supabase успел сохранить сессию
-                    setTimeout(async () => {
-                      const { data: { user } } = await supabase.auth.getUser();
-
-                      if (user) {
-                        const { data: profileData } = await supabase
-                          .from('profiles')
-                          .select('home_location')
-                          .eq('id', user.id)
-                          .single();
-
-                        if (profileData?.home_location) {
-                          const home = profileData.home_location;
-                          localStorage.setItem('map_center', JSON.stringify({ lat: home.lat, lng: home.lng }));
-                          localStorage.setItem('map_zoom', '12');
-                        }
-                      }
-
-                      window.location.reload();
-                    }, 1000); // задержка на 1 секунду — можно убрать, если всё работает и без неё
-
-                  } catch (e) {
-                    alert(t('auth.error'));
-                  }
-                }}
-                className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
-              >
-                {t('auth.google')}
-              </button>
-
-              <button
-                onClick={() => {
-                  const email = prompt(t('auth.enter_email'));
-                  if (email) {
-                    supabase.auth.signInWithOtp({ email }).then(({ error }) => {
-                      if (error) alert(t('auth.email_error') + ': ' + error.message);
-                      else alert(t('auth.email_sent'));
-                    });
-                  }
-                }}
-                className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
-              >
-                {t('auth.email')}
-              </button>
-
-              {smsStep === 'enter_phone' ? (
-                <div className="space-y-2">
-                  <input
-                    type="tel"
-                    placeholder={t('auth.phone_placeholder')}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full border border-black px-4 py-2 rounded-full font-semibold text-gray-800"
-                  />
-                  <button
-                    onClick={handleSmsSend}
-                    disabled={smsLoading}
-                    className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100 disabled:opacity-60"
-                  >
-                    {smsLoading ? t('auth.loading') : t('auth.sms')}
-                  </button>
-                  {smsError && <p className="text-red-600 text-sm">{smsError}</p>}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">
-                    {t('auth.code_sent_to')} <span className="font-medium">{phone}</span>{' '}
-                    <button type="button" onClick={() => setSmsStep('enter_phone')} className="underline">
-                      {t('auth.change_phone')}
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder={t('auth.enter_sms_code')}
-                    value={smsCode}
-                    onChange={(e) => setSmsCode(e.target.value)}
-                    className="w-full border border-black px-4 py-2 rounded-full text-gray-600"
-                  />
-                  <button
-                    onClick={handleVerifySms}
-                    disabled={smsLoading || !smsCode.trim()}
-                    className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100 disabled:opacity-60"
-                  >
-                    {smsLoading ? t('auth.loading') : t('auth.enter_code')}
-                  </button>
-                  {smsError && <p className="text-red-600 text-sm">{smsError}</p>}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={() => {
-                setPhone(''); setSmsCode(''); setSmsSent(false);
-                setShowAuthPrompt(false); setViewCount(0);
-              }}
-              className="text-gray-500 text-sm mt-2 underline"
-            >
-              {t('auth.no_thanks')}
-            </button>
-          </div>
-        </div>
-      )}
+      <AuthDialog
+        show={showAuthPrompt}
+        onClose={() => {
+          setShowAuthPrompt(false);
+          setViewCount(0); // обнуляем счётчик, как раньше
+        }}
+        setViewCount={setViewCount}
+      />
       <FeedbackModal
         open={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
