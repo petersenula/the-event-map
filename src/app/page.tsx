@@ -313,42 +313,6 @@ export default function EventMap() {
     window.location.reload();
   };
 
-  // 🧠 Восстанавливаем центр/зум после soft reload, если он действительно был
-  useEffect(() => {
-    const triggered = localStorage.getItem('map_reload_triggered');
-    if (triggered !== 'true') return;
-
-    const restoreAfterMapReady = async () => {
-      const maxTries = 15;
-      let tries = 0;
-
-      while ((!mapRef.current || !mapRef.current.getBounds?.()) && tries < maxTries) {
-        await new Promise(res => setTimeout(res, 200));
-        tries++;
-      }
-
-      const savedCenter = localStorage.getItem('map_reload_center');
-      const savedZoom = localStorage.getItem('map_reload_zoom');
-
-      if (savedCenter && savedZoom && mapRef.current) {
-        try {
-          const center = JSON.parse(savedCenter);
-          const zoom = parseInt(savedZoom, 10);
-          mapRef.current.setZoom(zoom);
-          mapRef.current.panTo(center);
-          console.log('[Map] Восстановлены центр и зум после soft reload');
-        } catch {
-          console.warn('[Map] Ошибка при восстановлении центра/зума');
-        }
-      }
-
-      // 🧽 Очищаем флаг, чтобы не срабатывало снова
-      localStorage.removeItem('map_reload_triggered');
-    };
-
-    restoreAfterMapReady();
-  }, []);
-
   const fetchEventsInBounds = useCallback(async (maybeBounds?: google.maps.LatLngBounds) => {
     if (fetchingRef.current) return;            // защита от дубликатов
     fetchingRef.current = true;

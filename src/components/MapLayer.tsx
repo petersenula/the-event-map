@@ -111,6 +111,12 @@ const MapLayer: React.FC<MapLayerProps> = ({
   useEffect(() => {
     const checkAndSetHomeLocation = async () => {
         try {
+        // 👇 если soft reload — пропускаем дом, чтобы не сбивать восстановление
+        if (isSoftReloadPending()) {
+            console.log('[HOME LOCATION] skip due to soft reload');
+            return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const { data: profileData, error } = await supabase
@@ -127,14 +133,12 @@ const MapLayer: React.FC<MapLayerProps> = ({
             if (profileData?.home_location) {
             const { lat, lng } = profileData.home_location;
 
-            // Устанавливаем центр и зум карты
             if (mapRef.current) {
                 mapRef.current.panTo({ lat, lng });
                 mapRef.current.setZoom(12);
                 console.log('[HOME LOCATION] Центр карты установлен из профиля');
             }
 
-            // Сохраняем в localStorage
             localStorage.setItem('saved_center', JSON.stringify({ lat, lng }));
             localStorage.setItem('saved_zoom', '12');
             } else {
@@ -189,33 +193,60 @@ const MapLayer: React.FC<MapLayerProps> = ({
     }
     initializedRef.current = true;
 
-    // --- восстановление центра/зума (твой код оставляем как было) ---
+    // --- восстановление центра/зума ---
     const pendingId = initialEventIdRef.current;
 
     if (pendingId) {
         (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
-        openEventById(pendingId);
+            openEventById(pendingId);
         });
     } else {
-        const savedCenter = localStorage.getItem('map_center');
-        const savedZoom = localStorage.getItem('map_zoom');
-        if (savedCenter && savedZoom) {
+    const reloadTriggered = localStorage.getItem('map_reload_triggered') === 'true';
+
+    if (reloadTriggered) {
         try {
-            const c = JSON.parse(savedCenter);
-            const z = JSON.parse(savedZoom);
-            map.setCenter(c);
-            map.setZoom(z);
-            console.log('[onLoad] restored center from storage', c, z);
-        } catch {
-            console.warn('[onLoad] failed to parse saved center/zoom');
+            const savedCenter = localStorage.getItem('map_reload_center');
+            const savedZoom   = localStorage.getItem('map_reload_zoom');
+
+            if (savedCenter && savedZoom) {
+                const c = JSON.parse(savedCenter);
+                const z = parseInt(savedZoom, 10);
+
+                // сначала зум, потом плавный пан
+                map.setZoom(z);
+                map.panTo(c);
+                console.log('[onLoad] restored after soft reload', c, z);
+            }
+        } catch (e) {
+         console.warn('[onLoad] restore after soft reload failed', e);
+        } finally {
+            // очищаем одноразовые ключи
+            localStorage.removeItem('map_reload_triggered');
+            localStorage.removeItem('map_reload_center');
+            localStorage.removeItem('map_reload_zoom');
         }
         } else {
-        const fallback = center; // берем из пропсов, теперь это Zürich HB
-        map.setCenter(fallback);
-        const defaultZoom = 13;  // комфортный городской масштаб
-        map.setZoom(defaultZoom);
-        localStorage.setItem('map_center', JSON.stringify(fallback));
-        localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
+            const savedCenter = localStorage.getItem('map_center');
+            const savedZoom   = localStorage.getItem('map_zoom');
+
+            if (savedCenter && savedZoom) {
+            try {
+                const c = JSON.parse(savedCenter);
+                const z = JSON.parse(savedZoom);
+                map.setCenter(c);
+                map.setZoom(z);
+                console.log('[onLoad] restored center from storage', c, z);
+            } catch {
+                console.warn('[onLoad] failed to parse saved center/zoom');
+            }
+            } else {
+            const fallback = center; // ← берём дефолт из пропсов (Zürich HB)
+            const defaultZoom = 13;
+            map.setCenter(fallback);
+            map.setZoom(defaultZoom);
+            localStorage.setItem('map_center', JSON.stringify(fallback));
+            localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
+            }
         }
     }
 
@@ -265,6 +296,17 @@ const MapLayer: React.FC<MapLayerProps> = ({
         if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
     });
 
+    let centerTimer: any;
+    map.addListener('center_changed', () => {
+    clearTimeout(centerTimer);
+    centerTimer = setTimeout(() => {
+        const c = map.getCenter();
+        if (c) {
+        localStorage.setItem('map_center', JSON.stringify({ lat: c.lat(), lng: c.lng() }));
+        }
+    }, 250);
+    });
+
     // Сообщаем наверх, что карта готова
     setMapReady(true);
     console.log('[onLoad] map mounted');
@@ -293,6 +335,9 @@ const MapLayer: React.FC<MapLayerProps> = ({
   }, []);
 
   console.log('[MapLayer] mapRef:', mapRef);
+
+  const isSoftReloadPending = () =>
+  typeof window !== 'undefined' && localStorage.getItem('map_reload_triggered') === 'true';
 
   return (
     <div className="fixed inset-0 z-0">
