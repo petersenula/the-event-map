@@ -46,7 +46,7 @@ const containerStyle = {
   boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
 };
 
-const center = { lat: 46.8182, lng: 8.2275 };
+const center = { lat: 47.378177, lng: 8.540192 };
 
 const availableLanguages = [
   { code: 'de', label: 'Deutsch', locale: de },
@@ -1614,6 +1614,12 @@ export default function EventMap() {
   // Полная очистка localStorage с перезагрузкой
 
   const handleClearStorage = () => {
+    try {
+      localStorage.removeItem('map_center');
+      localStorage.removeItem('map_zoom');
+      localStorage.removeItem('saved_center');
+      localStorage.removeItem('saved_zoom');
+    } catch {}
     window.location.reload();
   };
 

@@ -210,10 +210,11 @@ const MapLayer: React.FC<MapLayerProps> = ({
             console.warn('[onLoad] failed to parse saved center/zoom');
         }
         } else {
-        const fallback = { lat: 46.8182, lng: 8.2275 };
+        const fallback = center; // берем из пропсов, теперь это Zürich HB
         map.setCenter(fallback);
-        const defaultZoom = 10;
+        const defaultZoom = 13;  // комфортный городской масштаб
         map.setZoom(defaultZoom);
+        localStorage.setItem('map_center', JSON.stringify(fallback));
         localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
         }
     }
