@@ -838,7 +838,7 @@ export default function EventMap() {
           // Полная перезагрузка списка: обнуляем и грузим форсированно,
           // дождавшись готовой карты и её границ
           resetEvents();
-          const b = await waitForReadyMapAndBoundsAndSession();
+          const b = mapRef.current?.getBounds?.() ?? await ensureBounds();
           await fetchEventsInBounds(b ?? undefined, { force: true });
         }
 
