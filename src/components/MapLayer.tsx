@@ -45,9 +45,11 @@ interface MapLayerProps {
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   setFilteredEvents: React.Dispatch<React.SetStateAction<any[]>>;
   shouldForceReloadRef?: React.RefObject<boolean>;
+  ensureBounds: () => Promise<google.maps.LatLngBounds | null>;
 }
 
 const MapLayer: React.FC<MapLayerProps> = ({
+  ensureBounds,
   mapReady,
   favorites,
   setMapReady,

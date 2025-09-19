@@ -1622,6 +1622,7 @@ export default function EventMap() {
           setEvents={setEvents}
           setFilteredEvents={setFilteredEvents} 
           shouldForceReloadRef={shouldForceReloadRef}
+          ensureBounds={ensureBounds}
         />
 
       {isMobile ? (
