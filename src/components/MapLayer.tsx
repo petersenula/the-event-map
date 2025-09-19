@@ -81,77 +81,77 @@ const MapLayer: React.FC<MapLayerProps> = ({
   setEvents,
   setFilteredEvents,
 }) => {console.log('[MapLayer] mapRef:', mapRef);
-  const selected = selectedEvent
-    ? events.find((ev) => ev.id === selectedEvent) ?? null
-    : null;
+    const selected = selectedEvent
+        ? events.find((ev) => ev.id === selectedEvent) ?? null
+        : null;
 
-  const mapContainerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
-  const mapOptions = useMemo<google.maps.MapOptions>(
-    () => ({
-      zoomControl: true,
-      streetViewControl: !isMobile,
-      mapTypeControl: !isMobile,
-      fullscreenControl: !isMobile,
-      gestureHandling: 'greedy',
-      clickableIcons: false,
-    }),
-    [isMobile]
-  );
+    const mapContainerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
+    const mapOptions = useMemo<google.maps.MapOptions>(
+        () => ({
+        zoomControl: true,
+        streetViewControl: !isMobile,
+        mapTypeControl: !isMobile,
+        fullscreenControl: !isMobile,
+        gestureHandling: 'greedy',
+        clickableIcons: false,
+        }),
+        [isMobile]
+    );
 
-  const mapCenterRef = useRef(center);
-  const initialEventIdRef = useRef<number | null>(null);
+    const mapCenterRef = useRef(center);
+    const initialEventIdRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    try {
-      const p = new URL(window.location.href).searchParams.get('event');
-      initialEventIdRef.current = p && !isNaN(Number(p)) ? Number(p) : null;
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    const checkAndSetHomeLocation = async () => {
+    useEffect(() => {
         try {
-        // 👇 если soft reload — пропускаем дом, чтобы не сбивать восстановление
-        if (isSoftReloadPending()) {
-            console.log('[HOME LOCATION] skip due to soft reload');
-            return;
-        }
+        const p = new URL(window.location.href).searchParams.get('event');
+        initialEventIdRef.current = p && !isNaN(Number(p)) ? Number(p) : null;
+        } catch {}
+    }, []);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+    useEffect(() => {
+        // ждём готовности карты, иначе эффект может сработать раньше onLoad
+        if (!mapReady || !mapRef.current) return;
+
+        const checkAndSetHomeLocation = async () => {
+            try {
+            // ⚠️ если только что восстановились — пропускаем "дом" ОДИН РАЗ
+            if (localStorage.getItem('skip_home_once') === 'true') {
+                console.log('[HOME LOCATION] skipped once due to restore');
+                localStorage.removeItem('skip_home_once'); // одноразово
+                return;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
             const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('home_location')
-            .eq('id', user.id)
-            .single();
+                .from('profiles')
+                .select('home_location')
+                .eq('id', user.id)
+                .single();
 
             if (error) {
-            console.warn('[HOME LOCATION] Ошибка при загрузке профиля:', error.message);
-            return;
+                console.warn('[HOME LOCATION] error:', error.message);
+                return;
             }
 
-            if (profileData?.home_location) {
-            const { lat, lng } = profileData.home_location;
-
-            if (mapRef.current) {
-                mapRef.current.panTo({ lat, lng });
+            if (profileData?.home_location && mapRef.current) {
+                const { lat, lng } = profileData.home_location;
+                mapRef.current.panTo({ lat, lng }); // плавно
                 mapRef.current.setZoom(12);
-                console.log('[HOME LOCATION] Центр карты установлен из профиля');
-            }
 
-            localStorage.setItem('saved_center', JSON.stringify({ lat, lng }));
-            localStorage.setItem('saved_zoom', '12');
-            } else {
-            console.log('[HOME LOCATION] Домашнее местоположение не задано');
+                localStorage.setItem('saved_center', JSON.stringify({ lat, lng }));
+                localStorage.setItem('saved_zoom', '12');
+                console.log('[HOME LOCATION] applied from profile');
             }
-        }
-        } catch (err) {
-        console.error('[HOME LOCATION] Ошибка:', err);
-        }
-    };
+            } catch (err) {
+            console.error('[HOME LOCATION] exception:', err);
+            }
+        };
 
-    checkAndSetHomeLocation();
-    }, []);
+        checkAndSetHomeLocation();
+    }, [mapReady, mapRef]);
+
 
     useEffect(() => {
     if (!mapReady) {
@@ -183,32 +183,32 @@ const MapLayer: React.FC<MapLayerProps> = ({
    const initializedRef = useRef(false);
 
     const handleMapLoad = useCallback((map: google.maps.Map) => {
-    console.log('[onLoad] map initializing...');
-    mapRef.current = map;
+        console.log('[onLoad] map initializing...');
+        mapRef.current = map;
 
-    // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.
-    if (initializedRef.current) {
-        console.log('[onLoad] already initialized (StrictMode duplicate), skipping init');
-        return;
-    }
-    initializedRef.current = true;
+        // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.
+        if (initializedRef.current) {
+            console.log('[onLoad] already initialized (StrictMode duplicate), skipping init');
+            return;
+        }
+        initializedRef.current = true;
 
-    // --- восстановление центра/зума ---
-    const pendingId = initialEventIdRef.current;
+        // --- восстановление центра/зума ---
+        const pendingId = initialEventIdRef.current;
 
-    if (pendingId) {
-        (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
-            openEventById(pendingId);
-        });
-    } else {
-    const reloadTriggered = localStorage.getItem('map_reload_triggered') === 'true';
+        if (pendingId) {
+            (window as any).google.maps.event.addListenerOnce(map, 'idle', () => {
+                openEventById(pendingId);
+            });
+        } else {
+            const reloadTriggered = localStorage.getItem('map_reload_triggered') === 'true';
 
-    if (reloadTriggered) {
-        try {
-            const savedCenter = localStorage.getItem('map_reload_center');
-            const savedZoom   = localStorage.getItem('map_reload_zoom');
+            if (reloadTriggered) {
+            try {
+                const savedCenter = localStorage.getItem('map_reload_center');
+                const savedZoom   = localStorage.getItem('map_reload_zoom');
 
-            if (savedCenter && savedZoom) {
+                if (savedCenter && savedZoom) {
                 const c = JSON.parse(savedCenter);
                 const z = parseInt(savedZoom, 10);
 
@@ -216,102 +216,105 @@ const MapLayer: React.FC<MapLayerProps> = ({
                 map.setZoom(z);
                 map.panTo(c);
                 console.log('[onLoad] restored after soft reload', c, z);
-            }
-        } catch (e) {
-         console.warn('[onLoad] restore after soft reload failed', e);
-        } finally {
-            // очищаем одноразовые ключи
-            localStorage.removeItem('map_reload_triggered');
-            localStorage.removeItem('map_reload_center');
-            localStorage.removeItem('map_reload_zoom');
-        }
-        } else {
-            const savedCenter = localStorage.getItem('map_center');
-            const savedZoom   = localStorage.getItem('map_zoom');
 
-            if (savedCenter && savedZoom) {
-            try {
-                const c = JSON.parse(savedCenter);
-                const z = JSON.parse(savedZoom);
-                map.setCenter(c);
-                map.setZoom(z);
-                console.log('[onLoad] restored center from storage', c, z);
-            } catch {
-                console.warn('[onLoad] failed to parse saved center/zoom');
+                // 👇 ВАЖНО: скажем логике "домашнего адреса" ничего не делать один раз
+                localStorage.setItem('skip_home_once', 'true');
+            }
+            } catch (e) {
+                console.warn('[onLoad] restore after soft reload failed', e);
+            } finally {
+                // очищаем одноразовые ключи soft reload
+                localStorage.removeItem('map_reload_triggered');
+                localStorage.removeItem('map_reload_center');
+                localStorage.removeItem('map_reload_zoom');
             }
             } else {
-            const fallback = center; // ← берём дефолт из пропсов (Zürich HB)
-            const defaultZoom = 13;
-            map.setCenter(fallback);
-            map.setZoom(defaultZoom);
-            localStorage.setItem('map_center', JSON.stringify(fallback));
-            localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
+                const savedCenter = localStorage.getItem('map_center');
+                const savedZoom   = localStorage.getItem('map_zoom');
+
+                if (savedCenter && savedZoom) {
+                try {
+                    const c = JSON.parse(savedCenter);
+                    const z = JSON.parse(savedZoom);
+                    map.setCenter(c);
+                    map.setZoom(z);
+                    console.log('[onLoad] restored center from storage', c, z);
+                    localStorage.setItem('skip_home_once', 'true');
+                } catch {
+                    console.warn('[onLoad] failed to parse saved center/zoom');
+                }
+                } else {
+                const fallback = center; // ← берём дефолт из пропсов (Zürich HB)
+                const defaultZoom = 13;
+                map.setCenter(fallback);
+                map.setZoom(defaultZoom);
+                localStorage.setItem('map_center', JSON.stringify(fallback));
+                localStorage.setItem('map_zoom', JSON.stringify(defaultZoom));
+                }
             }
         }
-    }
 
-    // 👉 Иногда контейнер уже виден, но Google не пересчитал размеры.
-    // Форсируем пересчёт и рецентрирование (два раза с маленькой задержкой).
-    const forceResize = () => {
-        try {
-        (window as any).google.maps.event.trigger(map, 'resize');
-        const c = map.getCenter();
-        if (c) map.setCenter(c);
-        } catch {}
-    };
-    setTimeout(forceResize, 0);
-    setTimeout(forceResize, 300);
+        // 👉 Иногда контейнер уже виден, но Google не пересчитал размеры.
+        // Форсируем пересчёт и рецентрирование (два раза с маленькой задержкой).
+        const forceResize = () => {
+            try {
+            (window as any).google.maps.event.trigger(map, 'resize');
+            const c = map.getCenter();
+            if (c) map.setCenter(c);
+            } catch {}
+        };
+        setTimeout(forceResize, 0);
+        setTimeout(forceResize, 300);
 
-    // 👉 Одноразовый 'idle' — это точка, когда проекция готова и есть bounds.
-    const once = map.addListener('idle', () => {
-        console.log('[onLoad] first idle — map ready');
-        const b = map.getBounds();
-        if (b) {
-        fetchEventsInBounds(b); // передаём готовые границы
-        } else {
-        // резерв: если вдруг idle без границ, подождём чуть-чуть
-        setTimeout(() => {
-            const bb = map.getBounds();
-            if (bb) fetchEventsInBounds(bb);
-        }, 200);
-        }
-        (window as any).google.maps.event.removeListener(once);
-    });
+        // 👉 Одноразовый 'idle' — это точка, когда проекция готова и есть bounds.
+        const once = map.addListener('idle', () => {
+            console.log('[onLoad] first idle — map ready');
+            const b = map.getBounds();
+            if (b) {
+            fetchEventsInBounds(b); // передаём готовые границы
+            } else {
+            // резерв: если вдруг idle без границ, подождём чуть-чуть
+            setTimeout(() => {
+                const bb = map.getBounds();
+                if (bb) fetchEventsInBounds(bb);
+            }, 200);
+            }
+            (window as any).google.maps.event.removeListener(once);
+        });
 
-    // 👉 Постоянный 'idle' — подгрузка при движении/зуме (с лёгким debounce)
-    let idleTimer: any;
-    map.addListener('idle', () => {
-        const b = map.getBounds();
-        if (!b) return;
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-        console.log('[idle] fetch in bounds');
-        fetchEventsInBounds(b);
-        }, 200);
-    });
+        // 👉 Постоянный 'idle' — подгрузка при движении/зуме (с лёгким debounce)
+        let idleTimer: any;
+        map.addListener('idle', () => {
+            const b = map.getBounds();
+            if (!b) return;
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+            console.log('[idle] fetch in bounds');
+            fetchEventsInBounds(b);
+            }, 200);
+        });
 
-    // Сохраняем zoom
-    map.addListener('zoom_changed', () => {
-        const z = map.getZoom();
-        if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
-    });
+        // Сохраняем zoom
+        map.addListener('zoom_changed', () => {
+            const z = map.getZoom();
+            if (z != null) localStorage.setItem('map_zoom', JSON.stringify(z));
+        });
 
-    let centerTimer: any;
-    map.addListener('center_changed', () => {
-    clearTimeout(centerTimer);
-    centerTimer = setTimeout(() => {
-        const c = map.getCenter();
-        if (c) {
-        localStorage.setItem('map_center', JSON.stringify({ lat: c.lat(), lng: c.lng() }));
-        }
-    }, 250);
-    });
+        let centerTimer: any;
+        map.addListener('center_changed', () => {
+        clearTimeout(centerTimer);
+        centerTimer = setTimeout(() => {
+            const c = map.getCenter();
+            if (c) {
+            localStorage.setItem('map_center', JSON.stringify({ lat: c.lat(), lng: c.lng() }));
+            }
+        }, 250);
+        });
 
-    // Сообщаем наверх, что карта готова
-    setMapReady(true);
-    console.log('[onLoad] map mounted');
+        // Сообщаем наверх, что карта готова
+        setMapReady(true);
+        console.log('[onLoad] map mounted');
     }, [fetchEventsInBounds, openEventById, setMapReady]);
-
 
   const handleMapUnmount = useCallback(() => {
     console.log('[onUnmount] map unmounted');
