@@ -152,15 +152,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
         checkAndSetHomeLocation();
     }, [mapReady, mapRef]);
 
-
-    useEffect(() => {
-    if (!mapReady) {
-        console.log('[useEffect] карта ещё не готова');
-        return;
-    }
-    console.log('[useEffect] карта готова, но ждём handleMapLoad для загрузки событий');
-    }, [mapReady]);
-
     useEffect(() => {
         if (showEventList && selectedEvent != null) {
         scrollToEvent(selectedEvent);

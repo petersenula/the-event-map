@@ -406,15 +406,6 @@ export default function EventMap() {
       window.removeEventListener('focus', onVisibleOrFocus);
     };
   }, []);
-
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-
-    const bounds = mapRef.current.getBounds();
-    if (!bounds) return;
-
-    fetchEventsInBounds();
-  }, [mapReady, fetchEventsInBounds]);
   
   const translateTypeUI = useCallback((type: string) => {
     const key = (typeTranslationKeys as Record<string, string>)[type];
@@ -924,20 +915,6 @@ export default function EventMap() {
       setVisibleCount(filteredByView.length);
     }
   }, [showEventList, filteredByView.length]);
-
-  useEffect(() => {
-    // ⏱ Автообновление сессии каждые 5 минут
-    const interval = setInterval(async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (!error && data?.session) {
-        setSession(data.session);
-        setIsAuthenticated(true);
-        console.log('[Session] Автообновление прошло успешно');
-      }
-    }, 5 * 60 * 1000); // 5 минут
-
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     applyFilters();
