@@ -44,6 +44,7 @@ interface MapLayerProps {
   resetEvents: () => void;
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   setFilteredEvents: React.Dispatch<React.SetStateAction<any[]>>;
+  shouldForceReloadRef?: React.RefObject<boolean>;
 }
 
 const MapLayer: React.FC<MapLayerProps> = ({
@@ -80,6 +81,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
   resetEvents,
   setEvents,
   setFilteredEvents,
+  shouldForceReloadRef,
 }) => {console.log('[MapLayer] mapRef:', mapRef);
     const selected = selectedEvent
         ? events.find((ev) => ev.id === selectedEvent) ?? null
@@ -179,12 +181,12 @@ const MapLayer: React.FC<MapLayerProps> = ({
         console.log('[onLoad] map initializing...');
         mapRef.current = map;
 
-        if (props.shouldForceReloadRef?.current) {
+        if (shouldForceReloadRef?.current) {
             console.log('[MapLayer] fetch после логина');
             resetEvents();
             const bounds = await ensureBounds();
             await fetchEventsInBounds(bounds ?? undefined, { force: true });
-            props.shouldForceReloadRef.current = false; // сброс
+            shouldForceReloadRef.current = false; // сброс
         }
 
         // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.

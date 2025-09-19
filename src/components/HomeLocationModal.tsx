@@ -6,6 +6,8 @@ import { Home, Locate } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/utils/supabase/client';
 
+const isMobile = typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
+
 interface Props {
   onClose: () => void;
   onSaved: () => void;
@@ -84,14 +86,15 @@ const HomeLocationModal: React.FC<Props> = ({ onClose, onSaved, mapRef }) => {
         </div>
 
         {/* Button: Use geolocation */}
-        <button
-          onClick={useGeolocation}
-          className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100 flex items-center justify-center gap-2"
-        >
-          <Locate className="w-4 h-4" />
-          {locating ? t('geo.locating') : t('geo.useMyLocation')}
-        </button>
-
+        {isMobile && (
+          <button
+            onClick={useGeolocation}
+            className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100 flex items-center justify-center gap-2"
+          >
+            <Locate className="w-4 h-4" />
+            {locating ? t('geo.locating') : t('geo.useMyLocation')}
+          </button>
+        )}
         {/* OR text */}
         <div className="text-center text-gray-500 text-sm font-medium">{t('geo.or')}</div>
 
