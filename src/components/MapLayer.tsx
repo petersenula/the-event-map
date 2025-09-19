@@ -100,6 +100,8 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
     const mapCenterRef = useRef(center);
     const initialEventIdRef = useRef<number | null>(null);
+    const wasSignedInOnceRef = useRef(false);
+
 
     useEffect(() => {
         try {
@@ -173,9 +175,17 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
    const initializedRef = useRef(false);
 
-    const handleMapLoad = useCallback((map: google.maps.Map) => {
+    const handleMapLoad = useCallback(async (map: google.maps.Map) => {
         console.log('[onLoad] map initializing...');
         mapRef.current = map;
+
+        if (props.shouldForceReloadRef?.current) {
+            console.log('[MapLayer] fetch после логина');
+            resetEvents();
+            const bounds = await ensureBounds();
+            await fetchEventsInBounds(bounds ?? undefined, { force: true });
+            props.shouldForceReloadRef.current = false; // сброс
+        }
 
         // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.
         if (initializedRef.current) {

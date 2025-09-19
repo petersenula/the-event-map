@@ -783,6 +783,8 @@ export default function EventMap() {
     return () => clearInterval(interval);
   }, [mapReady, fetchEventsInBounds]);
 
+  const shouldForceReloadRef = useRef(false);
+
   useEffect(() => {
     const init = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -829,8 +831,7 @@ export default function EventMap() {
           // Полная перезагрузка списка: обнуляем и грузим форсированно,
           // дождавшись готовой карты и её границ
           resetEvents();
-          const b = mapRef.current?.getBounds?.() ?? await ensureBounds();
-          await fetchEventsInBounds(b ?? undefined, { force: true });
+          shouldForceReloadRef.current = true;
         }
 
         // 4) если вышли — очищаем и тоже грузим события как для гостя
@@ -1620,6 +1621,7 @@ export default function EventMap() {
           resetEvents={resetEvents}
           setEvents={setEvents}
           setFilteredEvents={setFilteredEvents} 
+          shouldForceReloadRef={shouldForceReloadRef}
         />
 
       {isMobile ? (
