@@ -2,7 +2,7 @@ import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, Calendar
 import DatePicker from 'react-datepicker';
 import Link from 'next/link';
 import { RefObject } from 'react';
-import React, { Dispatch, SetStateAction, useState } from 'react';
+import React, { Dispatch, SetStateAction, useState, useEffect } from 'react';
 
 interface DesktopOverlayProps {
   favorites: string[];                               
@@ -50,6 +50,8 @@ interface DesktopOverlayProps {
   mapRef: React.RefObject<google.maps.Map | null>;
   showFavoritesList: boolean;
   setShowFavoritesList: React.Dispatch<React.SetStateAction<boolean>>;
+  userDisplay: string;
+  showAuthPrompt: boolean;
 }
 
 const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
@@ -97,7 +99,9 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
   makeGoogleCalendarUrl,
   setShowAuthPrompt,
   showFavoritesList,
-  setShowFavoritesList
+  setShowFavoritesList,
+  userDisplay,
+  showAuthPrompt, 
 }) => {
 
     // безопасные значения для пикеров
@@ -105,6 +109,60 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
     const end: Date | null = dateRange[0]?.endDate ?? null;
     const lang = i18n.language;
     const [showProfile, setShowProfile] = useState(false);
+    // 👇 ДОБАВЬ внутри DesktopOverlay (рядом с const [showProfile, setShowProfile] = useState(false);)
+    const openEventList = () => {
+      setShowEventList(true);
+      setShowFavoritesList(false);
+      setShowAuthPrompt(true && false); // не открываем, просто гарантированно закрыто
+      setShowAuthPrompt(false);
+      setShowProfile(false);
+    };
+
+    const openFavorites = () => {
+      setShowFavoritesList(true);
+      setShowEventList(false);
+      setShowAuthPrompt(false);
+      setShowProfile(false);
+    };
+
+    const openProfileModal = () => {
+      setShowProfile(true);
+      setShowEventList(false);
+      setShowFavoritesList(false);
+      setShowAuthPrompt(false);
+    };
+
+    const openAuthModal = () => {
+      setShowAuthPrompt(true);
+      setShowEventList(false);
+      setShowFavoritesList(false);
+      setShowProfile(false);
+    };
+
+    useEffect(() => {
+      if (showAuthPrompt) {
+        setShowEventList(false);
+        setShowFavoritesList(false);
+        setShowProfile(false);
+      }
+    }, [showAuthPrompt, setShowEventList, setShowFavoritesList]);
+
+    useEffect(() => {
+      if (showEventList) {
+        setShowFavoritesList(false);
+        setShowAuthPrompt(false);
+        setShowProfile(false);
+      }
+    }, [showEventList, setShowFavoritesList, setShowAuthPrompt]);
+
+    useEffect(() => {
+      if (showFavoritesList) {
+        setShowEventList(false);
+        setShowAuthPrompt(false);
+        setShowProfile(false);
+      }
+    }, [showFavoritesList, setShowEventList, setShowAuthPrompt]);
+
     function handleCheckboxChange(setState: React.Dispatch<React.SetStateAction<string[]>>, value: string) {
     setState((prev) =>
         prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
@@ -120,24 +178,25 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                     
                     <div className="relative z-10 w-[95vw] max-w-md bg-white rounded-2xl shadow-xl p-6 border border-gray-300">
                     <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-2 min-w-0">
                         <User className="text-gray-700 w-6 h-6" />
-                        <button onClick={() => setShowProfile(false)}>
+                        <span className="font-semibold text-gray-800 text-sm truncate max-w-[60vw]">
+                          {userDisplay || t('ui.profile')}
+                        </span>
+                      </div>
+                      <button onClick={() => setShowProfile(false)}>
                         <X className="w-6 h-6 text-gray-400 hover:text-gray-700" />
-                        </button>
+                      </button>
                     </div>
-
                     {/* НЕ авторизован */}
                     {!isAuthenticated ? (
                         <div className="space-y-4 text-sm text-gray-700">
                         <p>{t('profile.please_login')}</p>
                         <button
-                            onClick={() => {
-                            setShowProfile(false);
-                            setShowAuthPrompt(true);
-                            }}
-                            className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
+                          onClick={openAuthModal}
+                          className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
                         >
-                            {t('ui.login')}
+                          {t('ui.login')}
                         </button>
                         </div>
                     ) : (
@@ -182,13 +241,13 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
               {/* язык + logout */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setShowProfile(true)}
-                        className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
-                        >
-                        <User className="w-4 h-4 mr-1" />
-                        {t('ui.profile')}
-                    </button>
+                  <button
+                    onClick={openProfileModal}
+                    className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
+                  >
+                    <User className="w-4 h-4 mr-1" />
+                    {t('ui.profile')}
+                  </button>
                   <select
                     value={lang}
                     onChange={handleLanguageChange}
@@ -201,10 +260,10 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                     <option value="ru">RU</option>
                   </select>
                   <button
-                    onClick={() => setShowFavoritesList(prev => !prev)}
+                    onClick={() => (showFavoritesList ? setShowFavoritesList(false) : openFavorites())}
                     className={`p-2 rounded-full border ${showFavoritesList ? 'bg-pink-100' : 'bg-white'}`}
                     title={t('ui.favorites')}
-                    >
+                  >
                     <Heart className="w-5 h-5 text-pink-600" />
                   </button>
                   {/* 🆕 кнопка очистки */}
@@ -374,14 +433,13 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[96vw] md:w-[84vw] xl:w-[1200px]">
           <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2">
             <button
-              onClick={() => setShowEventList((prev) => !prev)}
+              onClick={() => (showEventList ? setShowEventList(false) : openEventList())}
               className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
               aria-label={showEventList ? t('ui.hideList') : t('ui.showList')}
               title={showEventList ? t('ui.hideList') : t('ui.showList')}
             >
               {showEventList ? t('ui.hideList') : '📋 ' + t('ui.showList')}
             </button>
-
             <Link href="/add-event" className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs">
               {t('ui.addEvent')}
             </Link>

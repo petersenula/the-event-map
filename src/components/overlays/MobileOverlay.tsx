@@ -4,7 +4,6 @@ import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, Calendar
 import cn from 'classnames';
 import DatePicker from 'react-datepicker';
 import React, { Dispatch, useState, SetStateAction, useEffect, RefObject } from 'react';
-import AuthModalPromo from '../AuthModalPromo';
 
 interface MobileOverlayProps {
   searchQuery: string;
@@ -54,6 +53,7 @@ interface MobileOverlayProps {
   mapRef: React.RefObject<google.maps.Map | null>;
   showFavoritesList: boolean;
   setShowFavoritesList: React.Dispatch<React.SetStateAction<boolean>>;
+  userDisplay: string;
 }
 
 const MobileOverlay: React.FC<MobileOverlayProps> = ({
@@ -103,6 +103,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
   showAuthPrompt,
   setShowAuthPrompt,
   showFavoritesList,
+  userDisplay,
   setShowFavoritesList
 }) => {
 
@@ -122,6 +123,58 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
         searchQuery.trim()
     );
 
+    const openEventList = () => {
+      setShowEventList(true);
+      setShowFavoritesList(false);
+      setShowAuthPrompt(false);
+      setShowProfile(false);
+    };
+
+    const openFavorites = () => {
+      setShowFavoritesList(true);
+      setShowEventList(false);
+      setShowAuthPrompt(false);
+      setShowProfile(false);
+    };
+
+    const openProfileModal = () => {
+      setShowProfile(true);
+      setShowEventList(false);
+      setShowFavoritesList(false);
+      setShowAuthPrompt(false);
+    };
+
+    const openAuthModal = () => {
+      setShowAuthPrompt(true);
+      setShowEventList(false);
+      setShowFavoritesList(false);
+      setShowProfile(false);
+    };
+
+    useEffect(() => {
+      if (showAuthPrompt) {
+        setShowEventList(false);
+        setShowFavoritesList(false);
+        setShowProfile(false);
+      }
+    }, [showAuthPrompt, setShowEventList, setShowFavoritesList]);
+
+    useEffect(() => {
+      if (showEventList) {
+        setShowFavoritesList(false);
+        setShowAuthPrompt(false);
+        setShowProfile(false);
+      }
+    }, [showEventList, setShowFavoritesList, setShowAuthPrompt]);
+
+    useEffect(() => {
+      if (showFavoritesList) {
+        setShowEventList(false);
+        setShowAuthPrompt(false);
+        setShowProfile(false);
+      }
+    }, [showFavoritesList, setShowEventList, setShowAuthPrompt]);
+
     function handleCheckboxChange(setState: React.Dispatch<React.SetStateAction<string[]>>, value: string) {
     setState((prev) =>
         prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
@@ -140,26 +193,27 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
 
                 {/* окно */}
                 <div className="relative z-[3001] w-[95vw] max-w-md bg-white rounded-2xl shadow-xl p-6 border border-gray-300">
-                    <div className="flex justify-between items-center mb-4">
-                        <User className="text-gray-700 w-6 h-6" />
-                        <button onClick={() => setShowProfile(false)}>
-                            <X className="w-6 h-6 text-gray-400 hover:text-gray-700" />
-                        </button>
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <User className="text-gray-700 w-6 h-6" />
+                      <span className="font-semibold text-gray-800 text-sm truncate max-w-[60vw]">
+                        {userDisplay || t('ui.profile')}
+                      </span>
                     </div>
-
+                    <button onClick={() => setShowProfile(false)}>
+                      <X className="w-6 h-6 text-gray-400 hover:text-gray-700" />
+                    </button>
+                  </div>
                     {/* НЕ авторизован */}
                     {!isAuthenticated ? (
                         <div className="space-y-4 text-sm text-gray-700">
-                            <p>{t('profile.please_login')}</p>
-                            <button
-                                onClick={() => {
-                                setShowProfile(false);
-                                setShowAuthPrompt(true);
-                                }}
-                                className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
-                                >
-                                {t('ui.login')}
-                            </button>
+                          <p>{t('profile.please_login')}</p>
+                          <button
+                            onClick={openAuthModal}
+                            className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
+                          >
+                            {t('ui.login')}
+                          </button>
                         </div>
                     ) : (
                         <div className="space-y-4 text-sm text-gray-700">
@@ -203,56 +257,56 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
         <div className="fixed top-0 left-0 right-0 backdrop-blur-sm z-[2000]">
           <div className="mx-2 mt-2 mb-2 rounded-xl bg-white/95 shadow p-2">
             <div className="flex items-center justify-between gap-2 mb-2">
+              <button
+                onClick={openProfileModal}
+                className="p-1 rounded-full hover:bg-gray-200"
+                title="Profile"
+              >
+                <User className="w-5 h-5 text-gray-700" />
+              </button>
+              <div className="flex items-center gap-2">
+                <select
+                    value={lang}
+                    onChange={handleLanguageChange}
+                    className="px-2 py-1 rounded-md shadow text-sm border border-gray-300 bg-white"
+                    >
+                    <option value="en">EN</option>
+                    <option value="de">DE</option>
+                    <option value="fr">FR</option>
+                    <option value="it">IT</option>
+                    <option value="ru">RU</option>
+                </select>
+                {/* 🆕 кнопка очистки */}
                 <button
-                    onClick={() => setShowProfile(true)}
-                    className="p-1 rounded-full hover:bg-gray-200"
-                    title="Profile"
+                    onClick={handleClearStorage}
+                    title="Clear local storage"
+                    className="text-gray-500 hover:text-red-500 transition p-1"
                     >
-                    <User className="w-5 h-5 text-gray-700" />
+                    <RefreshCw size={20} />
                 </button>
-                <div className="flex items-center gap-2">
-                    <select
-                        value={lang}
-                        onChange={handleLanguageChange}
-                        className="px-2 py-1 rounded-md shadow text-sm border border-gray-300 bg-white"
-                        >
-                        <option value="en">EN</option>
-                        <option value="de">DE</option>
-                        <option value="fr">FR</option>
-                        <option value="it">IT</option>
-                        <option value="ru">RU</option>
-                    </select>
-                    {/* 🆕 кнопка очистки */}
-                    <button
-                        onClick={handleClearStorage}
-                        title="Clear local storage"
-                        className="text-gray-500 hover:text-red-500 transition p-1"
-                        >
-                        <RefreshCw size={20} />
-                    </button>
-                    <button
-                        onClick={() => setShowFavoritesList(prev => !prev)}
-                        className={`p-2 rounded-full border ${showFavoritesList ? 'bg-pink-100' : 'bg-white'}`}
-                        title={t('ui.favorites')}
-                        >
-                        <Heart className="w-5 h-5 text-pink-600" />
-                    </button>
-                    {/* Filters button */}
-                    <button
-                        onClick={() => setShowMobileFilters(true)}
-                        className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
-                        title={t('filters.header')}
-                    >
-                        <Filter className={`w-5 h-5 ${hasActiveFilters ? 'text-green-600' : 'text-gray-600'}`} />
-                    </button>
-                    <button
-                        onClick={() => setShowEventList(prev => !prev)}
-                        className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
-                        title={showEventList ? t('ui.hideList') : t('ui.showList')}
-                    >
-                        <List className="w-5 h-5 text-gray-600" />
-                    </button>
-                </div>
+                <button
+                  onClick={() => (showFavoritesList ? setShowFavoritesList(false) : openFavorites())}
+                  className={`p-2 rounded-full border ${showFavoritesList ? 'bg-pink-100' : 'bg-white'}`}
+                  title={t('ui.favorites')}
+                >
+                  <Heart className="w-5 h-5 text-pink-600" />
+                </button>
+                {/* Filters button */}
+                <button
+                    onClick={() => setShowMobileFilters(true)}
+                    className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
+                    title={t('filters.header')}
+                >
+                    <Filter className={`w-5 h-5 ${hasActiveFilters ? 'text-green-600' : 'text-gray-600'}`} />
+                </button>
+                <button
+                  onClick={() => (showEventList ? setShowEventList(false) : openEventList())}
+                  className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
+                  title={showEventList ? t('ui.hideList') : t('ui.showList')}
+                >
+                  <List className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
             </div>
 
             {/* строка 2: компактные даты + выбранный период */}

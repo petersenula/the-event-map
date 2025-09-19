@@ -197,6 +197,19 @@ export default function EventMap() {
     loadedEventIds.current.clear();
   };
 
+  const [session, setSession] = useState<any>(null);
+
+  const userDisplay = useMemo(() => {
+    const u = session?.user;
+    if (!u) return '';
+    const name =
+      (u.user_metadata?.name || u.user_metadata?.full_name || '').trim();
+    if (name) return name;
+    if (u.email) return u.email || '';
+    if (u.phone) return u.phone || '';
+    return '';
+  }, [session]);
+
   const loadedEventIds = useRef<Set<number>>(new Set());
 
   const ensureBounds = async (): Promise<google.maps.LatLngBounds | null> => {
@@ -495,8 +508,6 @@ export default function EventMap() {
     libraries: GMAPS_LIBS,
   });
 
-  // auth/session
-  const [session, setSession] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const mapStatus = !isLoaded ? 'loading' : (loadError ? 'error' : 'ready');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1707,9 +1718,11 @@ export default function EventMap() {
           handleNavigate={handleNavigate}
           showFavoritesList={showFavoritesList}
           setShowFavoritesList={setShowFavoritesList}
+          userDisplay={userDisplay}
         />
       ) : (
         <DesktopOverlay 
+          showAuthPrompt={showAuthPrompt}
           setShowAuthPrompt={setShowAuthPrompt}
           mapRef={mapRef}
           dateRange={dateRange}
@@ -1755,9 +1768,9 @@ export default function EventMap() {
           toggleFavorite={toggleFavorite}
           showFavoritesList={showFavoritesList}
           setShowFavoritesList={setShowFavoritesList}
+          userDisplay={userDisplay}
         />
       )}
-
       {showFavoritesList && (
         <>
           {/* 📱 Мобильный список */}
