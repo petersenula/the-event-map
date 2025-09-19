@@ -210,7 +210,7 @@ export default function EventMap() {
     return '';
   }, [session]);
 
-  const loadedEventIds = useRef<Set<number>>(new Set());
+  const loadedEventIds = useRef<Set<string>>(new Set());
 
   const ensureBounds = async (): Promise<google.maps.LatLngBounds | null> => {
     let tries = 0;
@@ -313,66 +313,71 @@ export default function EventMap() {
     window.location.reload();
   };
 
-  const fetchEventsInBounds = useCallback(async (maybeBounds?: google.maps.LatLngBounds) => {
-    if (fetchingRef.current) return;            // защита от дубликатов
-    fetchingRef.current = true;
-    try {
-      const bounds = maybeBounds ?? (await ensureBounds());
-      if (!bounds) return;
+  const fetchEventsInBounds = useCallback(
+    async (
+      maybeBounds?: google.maps.LatLngBounds | null,
+      _opts?: { force?: boolean } // оставим сигнатуру, но дубликаты всё равно режем
+    ) => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
 
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-      const minLat = sw.lat(), maxLat = ne.lat();
-      const minLng = sw.lng(), maxLng = ne.lng();
+      try {
+        const bounds = maybeBounds ?? (await ensureBounds());
+        if (!bounds) return;
 
-      const pageSize = 200;                     // для подгрузок
-      let page = 0;
-      const newly: any[] = [];
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const minLat = sw.lat(), maxLat = ne.lat();
+        const minLng = sw.lng(), maxLng = ne.lng();
 
-      for (;;) {
-        const from = page * pageSize;
-        const to   = from + pageSize - 1;
+        const pageSize = 200;
+        let page = 0;
+        const newly: any[] = [];
 
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .gte('lat', minLat).lte('lat', maxLat)
-          .gte('lng', minLng).lte('lng', maxLng)
-          .range(from, to);
+        for (;;) {
+          const from = page * pageSize;
+          const to   = from + pageSize - 1;
 
-        if (error) { console.error('fetch error:', error); break; }
-        const batch = data ?? [];
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .gte('lat', minLat).lte('lat', maxLat)
+            .gte('lng', minLng).lte('lng', maxLng)
+            .range(from, to);
 
-        // если страница пустая — точно конец
-        if (batch.length === 0) break;
+          if (error) { console.error('fetch error:', error); break; }
 
-        // фильтруем уже загруженные
-        const fresh = batch.filter(ev => !loadedEventIds.current.has(ev.id));
+          const batch = data ?? [];
+          if (batch.length === 0) break;
 
-        // складываем всё новое
-        for (const ev of fresh) {
-          const parsed = parseFloat(ev.lat); const parsed2 = parseFloat(ev.lng);
-          newly.push({ ...ev, lat: parsed, lng: parsed2, types: normalizeType(ev.type) });
-          loadedEventIds.current.add(ev.id);
+          // ✅ всегда режем дубли по строковому id
+          const fresh = batch.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+
+          for (const ev of fresh) {
+            const parsedLat = parseFloat(ev.lat);
+            const parsedLng = parseFloat(ev.lng);
+            const normType  = normalizeType(ev.type);
+            newly.push({ ...ev, lat: parsedLat, lng: parsedLng, types: normType });
+            loadedEventIds.current.add(String(ev.id));
+          }
+
+          if (batch.length < pageSize) break;
+          page++;
         }
 
-        // если страница меньше pageSize — тоже конец
-        if (batch.length < pageSize) break;
-
-        // иначе идём дальше
-        page++;
+        if (newly.length) {
+          setEvents(prev => [...prev, ...newly]);
+          setFilteredEvents(prev => [...prev, ...newly]);
+        }
+      } catch (e) {
+        console.error('fetchEventsInBounds failed:', e);
+      } finally {
+        fetchingRef.current = false;
       }
+    },
+    [setEvents, setFilteredEvents]
+  );
 
-      if (newly.length) {
-        setEvents(prev => [...prev, ...newly]);
-        setFilteredEvents(prev => [...prev, ...newly]);
-      }
-    } catch (e) {
-      console.error('fetchEventsInBounds failed:', e);
-    } finally {
-      fetchingRef.current = false;
-    }
-  }, [setEvents, setFilteredEvents]);
 
   useEffect(() => {
     const onVisibleOrFocus = () => {
@@ -504,16 +509,6 @@ export default function EventMap() {
   }, []);
 
   // 📣 Подписка на изменение авторизации
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('📣 Auth state change:', event, session);
-      setIsAuthenticated(!!session);
-    });
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
 
   const [viewCount, setViewCount] = useState(0);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -749,7 +744,7 @@ export default function EventMap() {
 
           setEvents(prev => (prev.some(ev => ev.id === found!.id) ? prev : [...prev, found!]));
           setFilteredEvents(prev => (prev.some(ev => ev.id === found!.id) ? prev : [...prev, found!]));
-          loadedEventIds.current.add(found.id);
+          loadedEventIds.current.add(String(found.id));
         }
       }
 
@@ -816,38 +811,49 @@ export default function EventMap() {
   }, []);
 
   // Подписка на изменение авторизации
-// 1. Слушаем изменения авторизации
+  // 1. Слушаем изменения авторизации
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setIsAuthenticated(true);
-          setSession({ user });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, newSession) => {
+        console.log('📣 Auth state change:', event, newSession);
 
-          try {
-            const favs = await loadFavoritesFromProfile(user.id);
-            setFavorites(favs);
-          } catch (err) {
-            console.error('Ошибка загрузки избранного из профиля:', err);
+        // 1) актуальный user
+        const user = newSession?.user ?? (await supabase.auth.getUser()).data.user ?? null;
+
+        // 2) обновляем локальные флаги
+        setIsAuthenticated(!!user);
+        setSession(user ? { user } : null);
+
+        // 3) если вошли/обновили токен/инициализировались — подтягиваем избранное и события
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          if (user) {
+            try {
+              const favs = await loadFavoritesFromProfile(user.id);
+              setFavorites(favs);
+            } catch (err) {
+              console.error('Ошибка загрузки избранного из профиля:', err);
+            }
           }
 
-          // После входа загружаем события
-          if (mapReady && mapRef.current) {
-            fetchEventsInBounds();
-          }
+          // Полная перезагрузка списка: обнуляем и грузим форсированно,
+          // дождавшись готовой карты и её границ
+          resetEvents();
+          const b = await waitForReadyMapAndBoundsAndSession();
+          await fetchEventsInBounds(b ?? undefined, { force: true });
+        }
+
+        // 4) если вышли — очищаем и тоже грузим события как для гостя
+        if (event === 'SIGNED_OUT') {
+          setFavorites([]);
+          resetEvents();
+          const b = await ensureBounds();
+          await fetchEventsInBounds(b ?? undefined, { force: true });
         }
       }
+    );
 
-      if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        setSession(null);
-        setFavorites([]);
-      }
-    });
-
-    return () => authListener?.subscription.unsubscribe();
-  }, [fetchEventsInBounds, mapReady]);
+    return () => authListener?.subscription?.unsubscribe();
+  }, [fetchEventsInBounds]);
 
   useEffect(() => {
     const ping = () => { supabase.auth.getUser().catch(() => {}); };
@@ -1489,7 +1495,7 @@ export default function EventMap() {
         setFilteredEvents(prev => (prev.some(p => p.id === id) ? prev : [...prev, ev!]));
 
         // если используешь loadedEventIds — пометим
-        loadedEventIds?.current?.add?.(id);
+        loadedEventIds?.current?.add?.(String(id));
       }
     }
 
