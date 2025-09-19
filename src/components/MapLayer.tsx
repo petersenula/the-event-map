@@ -44,12 +44,9 @@ interface MapLayerProps {
   resetEvents: () => void;
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   setFilteredEvents: React.Dispatch<React.SetStateAction<any[]>>;
-  shouldForceReloadRef?: React.RefObject<boolean>;
-  ensureBounds: () => Promise<google.maps.LatLngBounds | null>;
 }
 
 const MapLayer: React.FC<MapLayerProps> = ({
-  ensureBounds,
   mapReady,
   favorites,
   setMapReady,
@@ -83,7 +80,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
   resetEvents,
   setEvents,
   setFilteredEvents,
-  shouldForceReloadRef,
 }) => {console.log('[MapLayer] mapRef:', mapRef);
     const selected = selectedEvent
         ? events.find((ev) => ev.id === selectedEvent) ?? null
@@ -104,8 +100,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
     const mapCenterRef = useRef(center);
     const initialEventIdRef = useRef<number | null>(null);
-    const wasSignedInOnceRef = useRef(false);
-
 
     useEffect(() => {
         try {
@@ -158,6 +152,15 @@ const MapLayer: React.FC<MapLayerProps> = ({
         checkAndSetHomeLocation();
     }, [mapReady, mapRef]);
 
+
+    useEffect(() => {
+    if (!mapReady) {
+        console.log('[useEffect] карта ещё не готова');
+        return;
+    }
+    console.log('[useEffect] карта готова, но ждём handleMapLoad для загрузки событий');
+    }, [mapReady]);
+
     useEffect(() => {
         if (showEventList && selectedEvent != null) {
         scrollToEvent(selectedEvent);
@@ -179,17 +182,9 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
    const initializedRef = useRef(false);
 
-    const handleMapLoad = useCallback(async (map: google.maps.Map) => {
+    const handleMapLoad = useCallback((map: google.maps.Map) => {
         console.log('[onLoad] map initializing...');
         mapRef.current = map;
-
-        if (shouldForceReloadRef?.current) {
-            console.log('[MapLayer] fetch после логина');
-            resetEvents();
-            const bounds = await ensureBounds();
-            await fetchEventsInBounds(bounds ?? undefined, { force: true });
-            shouldForceReloadRef.current = false; // сброс
-        }
 
         // ⚠️ Dev-режим с React.StrictMode монтирует 2 раза.
         if (initializedRef.current) {
