@@ -1,30 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
 
 export default function Callback() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const waitForSession = async () => {
-      let tries = 0;
-      while (tries < 10) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          break;
-        }
-        await new Promise((res) => setTimeout(res, 300)); // подождать 300ms
-        tries++;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('[Callback] session OK → redirect to /');
+      } else {
+        console.warn('[Callback] no session found');
       }
-      setLoading(false);
       router.replace('/');
-    };
-
-    waitForSession();
+    });
   }, [router]);
 
-  return <p>Processing authorisation...</p>;
+  return <p>Processing authorisation…</p>;
 }

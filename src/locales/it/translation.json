@@ -73,7 +73,7 @@
   "logged_in": "Accesso effettuato!",
   "login_error": "Errore di accesso",
   "phone_required": "Inserisci il tuo numero di telefono",
-  "phone_placeholder": "Il tuo numero di telefono",
+  "phone_placeholder": "Inserisci il tuo numero di telefono in formato internazionale, es. +41791112233",
   "code_sent_to": "Codice inviato a",
   "change_phone": "Cambia numero",
   "loading": "Attendere..."

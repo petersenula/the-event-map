@@ -68,7 +68,7 @@
     "logged_in": "You are logged in!",
     "login_error": "Login error",
     "phone_required": "Please enter your phone number",
-    "phone_placeholder": "Your phone number",
+    "phone_placeholder": "Enter your phone number in international format, e.g. +41791112233",
     "code_sent_to": "Code sent to",
     "change_phone": "Change number",
     "loading": "Please wait..."

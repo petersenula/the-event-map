@@ -60,33 +60,35 @@ export default function AuthDialog({ show, onClose, setViewCount }: Props) {
         <h2 className="text-base text-gray-800 font-semibold leading-snug">{t('auth.promo')}</h2>
 
         <div className="space-y-2">
-          <button
+            <button
             onClick={async () => {
-              const { error } = await supabase.auth.signInWithOAuth({
+                const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: `${window.location.origin}/auth/callback` },
-              });
-              if (error) alert(t('auth.error') + ': ' + error.message);
-            }}
-            className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
-          >
-            {t('auth.google')}
-          </button>
-
-          <button
-            onClick={() => {
-              const email = prompt(t('auth.enter_email'));
-              if (email) {
-                supabase.auth.signInWithOtp({ email }).then(({ error }) => {
-                  if (error) alert(t('auth.email_error') + ': ' + error.message);
-                  else alert(t('auth.email_sent'));
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    queryParams: { prompt: 'select_account' }, // всегда выбор аккаунта
+                },
                 });
-              }
+                if (error) alert(t('auth.error') + ': ' + error.message);
             }}
             className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
-          >
-            {t('auth.email')}
-          </button>
+            >
+            {t('auth.google')}
+            </button>
+            <button
+                onClick={() => {
+                const email = prompt(t('auth.enter_email'));
+                if (email) {
+                    supabase.auth.signInWithOtp({ email }).then(({ error }) => {
+                    if (error) alert(t('auth.email_error') + ': ' + error.message);
+                    else alert(t('auth.email_sent'));
+                    });
+                }
+                }}
+                className="w-full border border-black text-gray-800 font-semibold px-4 py-2 rounded-full hover:bg-gray-100"
+            >
+                {t('auth.email')}
+            </button>
 
           {smsStep === 'enter_phone' ? (
             <div className="space-y-2">

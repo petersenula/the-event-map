@@ -74,7 +74,7 @@
   "logged_in": "Vous êtes connecté !",
   "login_error": "Erreur de connexion",
   "phone_required": "Veuillez entrer votre numéro de téléphone",
-  "phone_placeholder": "Votre numéro de téléphone",
+  "phone_placeholder": "Entrez votre numéro de téléphone au format international, par ex. +41791112233",
   "code_sent_to": "Code envoyé à",
   "change_phone": "Changer de numéro",
   "loading": "Veuillez patienter..."

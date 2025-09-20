@@ -28,6 +28,7 @@ import MobileOverlay from "@/components/overlays/MobileOverlay";
 import MapLayer from '@/components/MapLayer'; 
 import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
+import WelcomeDialog from '@/components/WelcomeDialog';
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -805,19 +806,21 @@ export default function EventMap() {
 
   // Подписка на изменение авторизации
   // 1. Слушаем изменения авторизации
+  const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('📣 Auth state change:', event, newSession);
 
-        // 1) актуальный user
-        const user = newSession?.user ?? (await supabase.auth.getUser()).data.user ?? null;
+        const user =
+          newSession?.user ??
+          (await supabase.auth.getUser()).data.user ??
+          null;
 
-        // 2) обновляем локальные флаги
         setIsAuthenticated(!!user);
         setSession(user ? { user } : null);
 
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (user) {
             try {
               const favs = await loadFavoritesFromProfile(user.id);
@@ -827,20 +830,11 @@ export default function EventMap() {
             }
           }
 
-          // очищаем список
+          // 💡 НЕ грузим события сразу → ждём WelcomeDialog
           resetEvents();
-
-          // сразу пробуем заново загрузить события в текущих границах карты
-          try {
-            const bounds = await ensureBounds();
-            await fetchEventsInBounds(bounds ?? undefined);
-            console.log('[Auth] события перезагружены после логина');
-          } catch (e) {
-            console.error('[Auth] ошибка при загрузке событий после логина', e);
-          }
+          setShowWelcome(true);
         }
 
-        // 4) если вышли — очищаем и тоже грузим события как для гостя
         if (event === 'SIGNED_OUT') {
           setFavorites([]);
           resetEvents();
@@ -1919,6 +1913,14 @@ export default function EventMap() {
         }}
         setViewCount={setViewCount}
       />
+      <WelcomeDialog
+        show={showWelcome}
+        onClose={() => setShowWelcome(false)}
+        mapReady={mapReady}
+        mapRef={mapRef}
+        fetchEventsInBounds={fetchEventsInBounds}
+      />
+
       <FeedbackModal
         open={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
