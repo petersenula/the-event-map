@@ -817,7 +817,6 @@ export default function EventMap() {
         setIsAuthenticated(!!user);
         setSession(user ? { user } : null);
 
-        // 3) если вошли/обновили токен/инициализировались — подтягиваем избранное и события
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
           if (user) {
             try {
@@ -828,10 +827,17 @@ export default function EventMap() {
             }
           }
 
-          // Полная перезагрузка списка: обнуляем и грузим форсированно,
-          // дождавшись готовой карты и её границ
+          // очищаем список
           resetEvents();
-          shouldForceReloadRef.current = true;
+
+          // сразу пробуем заново загрузить события в текущих границах карты
+          try {
+            const bounds = await ensureBounds();
+            await fetchEventsInBounds(bounds ?? undefined);
+            console.log('[Auth] события перезагружены после логина');
+          } catch (e) {
+            console.error('[Auth] ошибка при загрузке событий после логина', e);
+          }
         }
 
         // 4) если вышли — очищаем и тоже грузим события как для гостя
