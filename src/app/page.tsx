@@ -866,20 +866,23 @@ export default function EventMap() {
   // Подписка на изменение авторизации
   // 1. Слушаем изменения авторизации
   const [showWelcome, setShowWelcome] = useState(false);
+  
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log("[Auth state change]", event, newSession);
+        // Интересны только реальные изменения, INITIAL_SESSION можно игнорить
+        if (event === 'INITIAL_SESSION') return;
 
-        const user =
-          newSession?.user ??
-          (await supabase.auth.getUser()).data.user ??
-          null;
+        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+          const user =
+            newSession?.user ??
+            (await supabase.auth.getUser()).data.user ??
+            null;
 
-        setIsAuthenticated(!!user);
-        setSession(user ? { user } : null);
+          setIsAuthenticated(!!user);
+          setSession(user ? { user } : null);
 
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Фавориты обновим, но БЕЗ resetEvents (чтобы пины не мигали)
           if (user) {
             try {
               const favs = await loadFavoritesFromProfile(user.id);
@@ -888,24 +891,95 @@ export default function EventMap() {
               console.error('Ошибка загрузки избранного из профиля:', err);
             }
           }
-          resetEvents();
-          setShowWelcome(true);
+
+          // По желанию — мягко «подлить» свежие события в текущие границы:
+          // if (mapRef.current?.getBounds()) {
+          //   fetchEventsInBounds(mapRef.current.getBounds()!);
+          // }
         }
 
         if (event === 'SIGNED_OUT') {
-          setFavorites([]);
-          resetEvents();
-          const b = await ensureBounds();
-          await fetchEventsInBounds(b ?? undefined, { force: true });
+          setIsAuthenticated(false);
+          setSession(null);
+
+          // Если это был наш осознанный logout по кнопке:
+          if (manualLogoutRef.current) {
+            manualLogoutRef.current = false;
+
+            // Очищаем ТОЛЬКО volatile-состояния пользователя
+            setShowAuthPrompt(false);
+            setViewCount(0);
+            setFavorites([]); // ⚠️ это локальный список, IndexedDB с событиями не трогаем
+
+            // События НЕ сбрасываем (остаются на карте из IndexedDB)
+            // При желании можно разово "освежить" текущие границы из кэша:
+            if (mapRef.current?.getBounds()) {
+              fetchEventsInBounds(mapRef.current.getBounds()!);
+            }
+          } else {
+            // Тихая потеря сессии — НИЧЕГО не трогаем (карта остаётся),
+            // попробуем восстановить в фоне (см. раздел 5).
+          }
         }
       }
     );
 
-    // 👉 отписка при размонтировании
     return () => {
       subscription?.subscription.unsubscribe();
     };
+  }, [fetchEventsInBounds]);
+
+  // 5.1 Периодический refresh токена каждые 5 минут
+  useEffect(() => {
+    let stopped = false;
+
+    const tick = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data?.session) {
+          // сессии нет — пробуем тихо обновить
+          await supabase.auth.refreshSession();
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    // первый раз — через 30 секунд после старта, дальше каждые 5 минут
+    const t1 = setTimeout(() => { if (!stopped) tick(); }, 30_000);
+    const iv = setInterval(() => { if (!stopped) tick(); }, 5 * 60_000);
+
+    return () => {
+      stopped = true;
+      clearTimeout(t1);
+      clearInterval(iv);
+    };
   }, []);
+
+  // 5.2 При возвращении во вкладку — мгновенно пытаемся оживить сессию,
+  // и тихо подливаем события если тайл протух
+  useEffect(() => {
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data?.session) {
+          await supabase.auth.refreshSession().catch(() => {});
+        }
+      } catch {}
+
+      // Без перезагрузки страницы: если карта готова и есть границы — можно
+      // дернуть fetchEventsInBounds (он сам решит: взять из IndexedDB или сеть)
+      if (mapRef.current?.getBounds()) {
+        fetchEventsInBounds(mapRef.current.getBounds()!);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchEventsInBounds]);
+
 
   useEffect(() => {
     const initAuth = async () => {
@@ -1098,8 +1172,11 @@ export default function EventMap() {
     }
   };
 
+  const manualLogoutRef = useRef(false);
+
   const handleLogout = async () => {
     try {
+      manualLogoutRef.current = true;
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (!res.ok) throw new Error('Logout failed');
 
