@@ -61,14 +61,21 @@ function txDone(tx: IDBTransaction) {
 export function normalizeEvent(raw: any): EventRecord {
   const la = parseFloat(raw?.lat as any);
   const ln = parseFloat(raw?.lng as any);
-  const toArr = (v: any) => Array.isArray(v) ? v.map(String) : [];
+  const toArr = (v: any) => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map(String);
+    return [String(v)];
+  };
+
+  const types = toArr(raw.type ?? raw.types);
+
   return {
     ...raw,
     id: raw.id,
     lat: Number.isFinite(la) ? la : null,
     lng: Number.isFinite(ln) ? ln : null,
-    type: undefined,               // на всякий: единое поле types
-    types: toArr(raw.type ?? raw.types),
+    type: types.length ? types : ['other'], // 👈 вернули совместимость
+    types,
   };
 }
 
