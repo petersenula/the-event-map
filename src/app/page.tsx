@@ -867,9 +867,9 @@ export default function EventMap() {
   // 1. Слушаем изменения авторизации
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const { data: subscription } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('📣 Auth state change:', event, newSession);
+        console.log("[Auth state change]", event, newSession);
 
         const user =
           newSession?.user ??
@@ -888,8 +888,6 @@ export default function EventMap() {
               console.error('Ошибка загрузки избранного из профиля:', err);
             }
           }
-
-          // 💡 НЕ грузим события сразу → ждём WelcomeDialog
           resetEvents();
           setShowWelcome(true);
         }
@@ -903,8 +901,11 @@ export default function EventMap() {
       }
     );
 
-    return () => authListener?.subscription?.unsubscribe();
-  }, [fetchEventsInBounds]);
+    // 👉 отписка при размонтировании
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
+  }, []);
 
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
