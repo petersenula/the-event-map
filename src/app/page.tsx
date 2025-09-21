@@ -438,34 +438,6 @@ export default function EventMap() {
     },
     [ensureBounds, setEvents, setFilteredEvents]
   );
-
-  useEffect(() => {
-    const onVisibleOrFocus = () => {
-      const centerRaw = typeof window !== 'undefined' ? localStorage.getItem('map_center') : null;
-      const zoomRaw = typeof window !== 'undefined' ? localStorage.getItem('map_zoom') : null;
-
-      if (centerRaw && zoomRaw && mapRef.current) {
-        try {
-          const parsedCenter = JSON.parse(centerRaw);
-          const parsedZoom = parseInt(zoomRaw, 10);
-          mapRef.current.setCenter(parsedCenter);
-          mapRef.current.setZoom(parsedZoom);
-          console.log('[onVisibleOrFocus] восстановили карту из map_center/map_zoom');
-        } catch (e) {
-          console.warn('[onVisibleOrFocus] не смогли восстановить центр/зум');
-        }
-      }
-
-      handleMapSoftReload();
-    };
-
-    document.addEventListener('visibilitychange', onVisibleOrFocus);
-    window.addEventListener('focus', onVisibleOrFocus);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibleOrFocus);
-      window.removeEventListener('focus', onVisibleOrFocus);
-    };
-  }, []);
   
   const translateTypeUI = useCallback((type: string) => {
     const key = (typeTranslationKeys as Record<string, string>)[type];
