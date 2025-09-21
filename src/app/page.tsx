@@ -907,6 +907,32 @@ export default function EventMap() {
     };
   }, []);
 
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('[Auth init] error:', error);
+        return;
+      }
+      const session = data.session;
+      const user = session?.user ?? null;
+
+      setIsAuthenticated(!!user);
+      setSession(user ? { user } : null);
+
+      if (user) {
+        try {
+          const favs = await loadFavoritesFromProfile(user.id);
+          setFavorites(favs);
+        } catch (err) {
+          console.error('Ошибка загрузки избранного:', err);
+        }
+      }
+    };
+
+    initAuth();
+  }, []);
+
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
   async function fetchTotalEventsCount(): Promise<void> {
