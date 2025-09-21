@@ -119,6 +119,12 @@
   "unsupported": "Geolocation is not supported by your browser"
 },
 
+  "counter": {
+    "title": "Events",
+    "loaded_of_total": "Loaded",
+    "loaded_of_total_short": "Loaded"
+  },
+
   "Select Dates": "Select Dates",
   "Start of period": "Start of period",
   "End of period": "End of period",

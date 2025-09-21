@@ -52,6 +52,8 @@ interface DesktopOverlayProps {
   setShowFavoritesList: React.Dispatch<React.SetStateAction<boolean>>;
   userDisplay: string;
   showAuthPrompt: boolean;
+  loadedCount: number;
+  totalCount: number | null;
 }
 
 const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
@@ -102,6 +104,8 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
   setShowFavoritesList,
   userDisplay,
   showAuthPrompt, 
+  loadedCount,
+  totalCount,
 }) => {
 
     // безопасные значения для пикеров
@@ -246,8 +250,12 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                     className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
                   >
                     <User className="w-4 h-4 mr-1" />
-                    {t('ui.profile')}
                   </button>
+                  <span>
+                  <span className="ml-2 text-[11px] font-medium text-gray-500">
+                  { t('counter.loaded_of_total_short')} {loadedCount} / {totalCount ?? 0} 
+                  </span>
+                  </span>
                   <select
                     value={lang}
                     onChange={handleLanguageChange}

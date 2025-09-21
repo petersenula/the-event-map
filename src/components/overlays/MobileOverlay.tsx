@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, Copy } from 'lucide-react';
+import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, ListNumbers,  Copy } from 'lucide-react';
 import cn from 'classnames';
 import DatePicker from 'react-datepicker';
 import React, { Dispatch, useState, SetStateAction, useEffect, RefObject } from 'react';
@@ -54,6 +54,8 @@ interface MobileOverlayProps {
   showFavoritesList: boolean;
   setShowFavoritesList: React.Dispatch<React.SetStateAction<boolean>>;
   userDisplay: string;
+  loadedCount: number;
+  totalCount: number | null;
 }
 
 const MobileOverlay: React.FC<MobileOverlayProps> = ({
@@ -104,7 +106,9 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
   setShowAuthPrompt,
   showFavoritesList,
   userDisplay,
-  setShowFavoritesList
+  setShowFavoritesList,
+  loadedCount,
+  totalCount,
 }) => {
 
     const pill =
@@ -264,6 +268,11 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               >
                 <User className="w-5 h-5 text-gray-700" />
               </button>
+              <span>
+              <span className="ml-2 text-[11px] font-medium text-gray-500">
+              { t('counter.loaded_of_total_short')} {loadedCount} / {totalCount ?? 0} 
+              </span>
+              </span>
               <div className="flex items-center gap-2">
                 <select
                     value={lang}

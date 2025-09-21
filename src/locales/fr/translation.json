@@ -122,6 +122,12 @@
   "unsupported": "La géolocalisation n'est pas prise en charge par votre navigateur"
 },
 
+  "counter": {
+    "title": "Événements",
+    "loaded_of_total": "Chargé",
+    "loaded_of_total_short": "Chargé"
+  },
+
 "profile": {
   "please_login": "L'inscription permet d'ajouter des événements aux favoris et d'enregistrer des paramètres personnels. Veuillez vous connecter ou vous inscrire.",
   "enter_address": "Veuillez entrer votre adresse :"

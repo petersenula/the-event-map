@@ -314,6 +314,21 @@ export default function EventMap() {
     window.location.reload();
   };
 
+
+  const [loadedCount, setLoadedCount] = useState<number>(0);
+
+  const fetchTotalCountForCurrentFilters = useCallback(async () => {
+    try {
+      const { count, error } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true });
+      if (error) throw error;
+      setTotalCount(count ?? 0);
+    } catch (e) {
+      console.error('fetchTotalCount failed:', e);
+    }
+  }, []);
+
   const fetchEventsInBounds = useCallback(
     async (
       maybeBounds?: google.maps.LatLngBounds | null,
@@ -369,7 +384,9 @@ export default function EventMap() {
         if (newly.length) {
           setEvents(prev => [...prev, ...newly]);
           setFilteredEvents(prev => [...prev, ...newly]);
+          setLoadedCount(prev => prev + newly.length);
         }
+        await fetchTotalCountForCurrentFilters();
       } catch (e) {
         console.error('fetchEventsInBounds failed:', e);
       } finally {
@@ -378,7 +395,6 @@ export default function EventMap() {
     },
     [setEvents, setFilteredEvents]
   );
-
 
   useEffect(() => {
     const onVisibleOrFocus = () => {
@@ -846,6 +862,26 @@ export default function EventMap() {
 
     return () => authListener?.subscription?.unsubscribe();
   }, [fetchEventsInBounds]);
+
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+
+  async function fetchTotalEventsCount(): Promise<void> {
+    const { count, error } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true }); // head=true → только счётчик, без данных
+
+    if (error) {
+      console.error('[TotalEventsCount] error:', error);
+      setTotalCount(null);
+      return;
+    }
+
+    setTotalCount(count ?? 0);
+  }
+
+  useEffect(() => {
+    fetchTotalEventsCount();
+  }, []);
 
   useEffect(() => {
     const ping = () => { supabase.auth.getUser().catch(() => {}); };
@@ -1675,6 +1711,8 @@ export default function EventMap() {
           showFavoritesList={showFavoritesList}
           setShowFavoritesList={setShowFavoritesList}
           userDisplay={userDisplay}
+          loadedCount={events.length}
+          totalCount={totalCount}
         />
       ) : (
         <DesktopOverlay 
@@ -1725,6 +1763,8 @@ export default function EventMap() {
           showFavoritesList={showFavoritesList}
           setShowFavoritesList={setShowFavoritesList}
           userDisplay={userDisplay}
+          loadedCount={events.length}
+          totalCount={totalCount}
         />
       )}
       {showFavoritesList && (

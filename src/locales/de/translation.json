@@ -118,6 +118,12 @@
   "unsupported": "Geolokalisierung wird von Ihrem Browser nicht unterstützt"
 },
 
+  "counter": {
+    "title": "Events",
+    "loaded_of_total": "Geladen",
+    "loaded_of_total_short": "Geladen"
+  },
+
 "profile": {
   "please_login": "Mit der Anmeldung kannst du Veranstaltungen zu Favoriten hinzufügen und persönliche Einstellungen speichern. Bitte melde dich an oder registriere dich.",
   "enter_address": "Bitte gib deine Adresse ein:"
