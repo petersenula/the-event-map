@@ -29,6 +29,18 @@ import MapLayer from '@/components/MapLayer';
 import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
+import {
+  idbGetEventsInBounds,
+  idbPutEvents,
+  idbGetEventById,
+  idbDeleteEvent,
+  idbClearAll,
+  idbIsTileStale,
+  idbMarkTileFetched,
+  makeViewportKey,
+  normalizeEvent,
+} from '@/lib/idb';
+
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -330,10 +342,7 @@ export default function EventMap() {
   }, []);
 
   const fetchEventsInBounds = useCallback(
-    async (
-      maybeBounds?: google.maps.LatLngBounds | null,
-      _opts?: { force?: boolean } // оставим сигнатуру, но дубликаты всё равно режем
-    ) => {
+    async (maybeBounds?: google.maps.LatLngBounds | null) => {
       if (fetchingRef.current) return;
       fetchingRef.current = true;
 
@@ -346,9 +355,36 @@ export default function EventMap() {
         const minLat = sw.lat(), maxLat = ne.lat();
         const minLng = sw.lng(), maxLng = ne.lng();
 
+        // 0) ключ тайла + TTL
+        const zoom = mapRef.current?.getZoom?.() ?? 13;
+        const viewportKey = makeViewportKey({ minLat, maxLat, minLng, maxLng }, zoom);
+        const TTL_MS = 5 * 60 * 1000; // 5 минут (можно менять)
+
+        // 1) СНАЧАЛА — показ из IndexedDB (мгновенно)
+        try {
+          const cached = await idbGetEventsInBounds({ minLat, maxLat, minLng, maxLng });
+          if (cached?.length) {
+            const fresh = cached.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+            if (fresh.length) {
+              setEvents(prev => [...prev, ...fresh]);
+              setFilteredEvents(prev => [...prev, ...fresh]);
+              for (const ev of fresh) loadedEventIds.current.add(String(ev.id));
+            }
+          }
+        } catch (e) {
+          console.warn('[IDB] read error (ignored):', e);
+        }
+
+        // 2) Если тайл НЕ протух — выходим (не грузим сеть).
+        const stale = await idbIsTileStale(viewportKey, TTL_MS);
+        if (!stale) {
+          return;
+        }
+
+        // 3) Тянем сеть (как раньше), но теперь ещё и пишем в IndexedDB.
         const pageSize = 200;
         let page = 0;
-        const newly: any[] = [];
+        const toState: any[] = [];
 
         for (;;) {
           const from = page * pageSize;
@@ -361,39 +397,46 @@ export default function EventMap() {
             .gte('lng', minLng).lte('lng', maxLng)
             .range(from, to);
 
-          if (error) { console.error('fetch error:', error); break; }
+          if (error) {
+            console.error('[fetchEventsInBounds] supabase error:', error);
+            break;
+          }
 
-          const batch = data ?? [];
-          if (batch.length === 0) break;
+          const batch = (data ?? []).map(normalizeEvent);
+          if (!batch.length) break;
 
-          // ✅ всегда режем дубли по строковому id
-          const fresh = batch.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+          // в память — только те, которых ещё нет
+          const freshForState = batch.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+          toState.push(...freshForState);
+          for (const ev of freshForState) loadedEventIds.current.add(String(ev.id));
 
-          for (const ev of fresh) {
-            const parsedLat = parseFloat(ev.lat);
-            const parsedLng = parseFloat(ev.lng);
-            const normType  = normalizeType(ev.type);
-            newly.push({ ...ev, lat: parsedLat, lng: parsedLng, types: normType });
-            loadedEventIds.current.add(String(ev.id));
+          // в IndexedDB — ВСЮ пачку (обновляем/вставляем)
+          try { await idbPutEvents(batch); } catch (e) {
+            console.warn('[IDB] put error (ignored):', e);
           }
 
           if (batch.length < pageSize) break;
           page++;
         }
 
-        if (newly.length) {
-          setEvents(prev => [...prev, ...newly]);
-          setFilteredEvents(prev => [...prev, ...newly]);
-          setLoadedCount(prev => prev + newly.length);
+        if (toState.length) {
+          setEvents(prev => [...prev, ...toState]);
+          setFilteredEvents(prev => [...prev, ...toState]);
         }
+
+        // 4) помечаем тайл как свежий
+        await idbMarkTileFetched(viewportKey);
+
+        // (необязательно, но оставим)
         await fetchTotalCountForCurrentFilters();
       } catch (e) {
         console.error('fetchEventsInBounds failed:', e);
+        // если сеть упала — просто остаёмся на кэше
       } finally {
         fetchingRef.current = false;
       }
     },
-    [setEvents, setFilteredEvents]
+    [ensureBounds, setEvents, setFilteredEvents]
   );
 
   useEffect(() => {
@@ -901,13 +944,40 @@ export default function EventMap() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'events' },
-        () => {
-          console.log('[Realtime] Обнаружено изменение — загружаем события...');
-          fetchEventsInBounds();
+        async (payload: any) => {
+          try {
+            const type = payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE';
+            if (type === 'INSERT' || type === 'UPDATE') {
+              const ev = normalizeEvent(payload.new);
+              // 1) кэш
+              try { await idbPutEvents([ev]); } catch {}
+              // 2) память (если он уже показан — обновим; если нет — оставим кэш обновлённым)
+              setEvents(prev => {
+                const i = prev.findIndex(p => p.id === ev.id);
+                if (i === -1) return prev;
+                const next = prev.slice(); next[i] = { ...prev[i], ...ev }; return next;
+              });
+              setFilteredEvents(prev => {
+                const i = prev.findIndex(p => p.id === ev.id);
+                if (i === -1) return prev;
+                const next = prev.slice(); next[i] = { ...prev[i], ...ev }; return next;
+              });
+            }
+            if (type === 'DELETE') {
+              const id = payload.old?.id;
+              if (id != null) {
+                try { await idbDeleteEvent(id); } catch {}
+                setEvents(prev => prev.filter(p => p.id !== id));
+                setFilteredEvents(prev => prev.filter(p => p.id !== id));
+                loadedEventIds.current.delete(String(id));
+              }
+            }
+          } catch (e) {
+            console.warn('[Realtime] handler error:', e);
+          }
         }
       )
       .subscribe();
-
     // 💡 Важно: очищаем канал синхронно
     return () => {
       supabase.removeChannel(channel); // НЕ await — иначе Next.js может выдать ошибку
@@ -1482,52 +1552,45 @@ export default function EventMap() {
   };
 
   const openEventById = useCallback(async (id: number) => {
-    // 1) ищем в уже загруженных
-    let ev = events.find(e => e.id === id);
+    // 1) в памяти?
+    let ev: any = events.find(e => e.id === id);
 
-    // 2) если нет — дотягиваем по id из Supabase
+    // 2) в IndexedDB?
+    if (!ev) {
+      ev = await idbGetEventById(id);
+    }
+
+    // 3) в Supabase (и сразу в кэш)
     if (!ev) {
       const { data, error } = await supabase
         .from('events')
         .select('*')
         .eq('id', id)
-        .maybeSingle(); // если у тебя нет maybeSingle, используй .single() и ловим error
+        .maybeSingle();
 
       if (!error && data) {
-        const parsed = parseLatLng(data.lat, data.lng);
-        const normType = normalizeType(data.type);
-        ev = {
-          ...data,
-          lat: parsed?.lat ?? null,
-          lng: parsed?.lng ?? null,
-          type: normType,
-          types: normType, // если где-то в коде ждут "types"
-        };
-
-        // добавим в списки, если ещё нет
+        ev = normalizeEvent(data);
+        // в память
         setEvents(prev => (prev.some(p => p.id === id) ? prev : [...prev, ev!]));
         setFilteredEvents(prev => (prev.some(p => p.id === id) ? prev : [...prev, ev!]));
-
-        // если используешь loadedEventIds — пометим
         loadedEventIds?.current?.add?.(String(id));
+        // в кэш
+        try { await idbPutEvents([ev]); } catch {}
       }
     }
 
-    // 3) если нашли событие — центрируем карту и открываем инфо-окно
+    // если нашли — центрируем карту и открываем окно
     if (ev) {
       if (ev.lat && ev.lng && mapRef.current) {
         mapRef.current.panTo({ lat: ev.lat, lng: ev.lng });
-        // можно чуть приблизить, если сильно далеко
         const currentZoom = mapRef.current.getZoom() ?? 0;
         if (currentZoom < 12) mapRef.current.setZoom(12);
       }
-
       setSelectedEvent(ev);
-      // если есть список — прокрутим к карточке
       scrollIntoView?.(ev.id);
     }
 
-    // 4) очистим параметр из адресной строки (чтобы при F5 не всплывал снова)
+    // чистим URL
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.get('event')) {
@@ -1597,12 +1660,13 @@ export default function EventMap() {
     // === ВНУТРЕННИЕ КОМПОНЕНТЫ (используют состояния сверху) ===
   // Полная очистка localStorage с перезагрузкой
 
-  const handleClearStorage = () => {
+  const handleClearStorage = async () => {
     try {
       localStorage.removeItem('map_center');
       localStorage.removeItem('map_zoom');
       localStorage.removeItem('saved_center');
       localStorage.removeItem('saved_zoom');
+      await idbClearAll(); // <— добавили очистку IndexedDB
     } catch {}
     window.location.reload();
   };
