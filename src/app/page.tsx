@@ -29,6 +29,7 @@ import MapLayer from '@/components/MapLayer';
 import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
+import { forceUpdateToLatestCode } from '@/lib/swUpdate';
 import {
   idbGetEventsInBounds,
   idbPutEvents,
@@ -270,6 +271,28 @@ export default function EventMap() {
     } catch (e) {
       console.error('fetchTotalCount failed:', e);
     }
+  }, []);
+
+  useEffect(() => {
+    // Check&Apply update на холодном старте
+    (async () => {
+      try {
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return;
+        await reg.update().catch(() => {});
+        if (reg.waiting) {
+          // есть новая версия — применяем и перезагружаем
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          // дождёмся, когда новый SW возьмёт управление, и перезагрузимся
+          const onCc = () => {
+            navigator.serviceWorker.removeEventListener('controllerchange', onCc);
+            window.location.reload();
+          };
+          navigator.serviceWorker.addEventListener('controllerchange', onCc, { once: true });
+        }
+      } catch {}
+    })();
   }, []);
 
   const syncEventsWithServer = useCallback(
@@ -1659,7 +1682,7 @@ export default function EventMap() {
       setFilteredEvents(toState);
       for (const ev of toState) loadedEventIds.current.add(String(ev.id));
 
-      alert('Кэш очищен и события перезагружены.');
+      alert('Reloaded');
 
     } catch (e) {
       console.warn('[Clear storage] error:', e);
