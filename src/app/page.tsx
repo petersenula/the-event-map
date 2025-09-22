@@ -39,8 +39,12 @@ import {
   idbMarkTileFetched,
   makeViewportKey,
   normalizeEvent,
+  idbGetAllEvents,
+  idbGetAllIds,
+  idbBulkDelete,
+  idbMetaGet,
+  idbMetaSet,
 } from '@/lib/idb';
-
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -240,67 +244,6 @@ export default function EventMap() {
     return null;
   };
 
-  const waitForReadyMapAndBoundsAndSession = async (): Promise<google.maps.LatLngBounds | null> => {
-    // 1. ⏳ Ждём восстановления сессии
-    let tries = 0;
-    const maxSessionTries = 10;
-    const sessionDelay = 300;
-
-    while (tries < maxSessionTries) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session || tries === maxSessionTries - 1) {
-        if (session) {
-          console.log('[waitForReadyMapAndBoundsAndSession] сессия восстановлена');
-        } else {
-          console.warn('[waitForReadyMapAndBoundsAndSession] сессия не восстановлена, продолжаем без неё');
-        }
-        break;
-      }
-
-      console.log(`[waitForReadyMapAndBoundsAndSession] сессия не восстановлена, попытка ${tries + 1}`);
-      await new Promise((r) => setTimeout(r, sessionDelay));
-      tries++;
-    }
-
-    // 2. ⏳ Ждём карту и границы
-    return new Promise((resolve) => {
-      let attempts = 0;
-      const maxAttempts = 50; // 50 * 200ms = 10 секунд
-
-      const tryGetBounds = () => {
-        if (!mapReady || !mapRef.current) {
-          console.log('[waitForReadyMapAndBoundsAndSession] карта ещё не готова, повтор через 200мс');
-          attempts++;
-          if (attempts >= maxAttempts) {
-            console.warn('[waitForReadyMapAndBoundsAndSession] карта так и не готова, отмена');
-            resolve(null);
-            return;
-          }
-          setTimeout(tryGetBounds, 200);
-          return;
-        }
-
-        const currentBounds = mapRef.current.getBounds?.();
-        if (!currentBounds) {
-          console.log('[waitForReadyMapAndBoundsAndSession] границы ещё не готовы, повтор через 200мс');
-          attempts++;
-          if (attempts >= maxAttempts) {
-            console.warn('[waitForReadyMapAndBoundsAndSession] границы так и не появились, отмена');
-            resolve(null);
-            return;
-          }
-          setTimeout(tryGetBounds, 200);
-          return;
-        }
-
-        console.log('[waitForReadyMapAndBoundsAndSession] карта и границы готовы');
-        resolve(currentBounds);
-      };
-
-      tryGetBounds();
-    });
-  };
-
   const fetchingRef = useRef(false);
 
   async function waitForSessionRestore(timeoutMs = 3000): Promise<boolean> {
@@ -315,18 +258,6 @@ export default function EventMap() {
     }
   }
 
-  const handleMapSoftReload = () => {
-    const center = mapRef.current?.getCenter?.()?.toJSON?.();
-    const zoom = mapRef.current?.getZoom?.();
-    if (center && zoom !== undefined) {
-      localStorage.setItem('map_reload_center', JSON.stringify(center));
-      localStorage.setItem('map_reload_zoom', zoom.toString());
-      localStorage.setItem('map_reload_triggered', 'true'); // ⚠️ чтобы понять, что был soft reload
-    }
-    window.location.reload();
-  };
-
-
   const [loadedCount, setLoadedCount] = useState<number>(0);
 
   const fetchTotalCountForCurrentFilters = useCallback(async () => {
@@ -339,6 +270,172 @@ export default function EventMap() {
     } catch (e) {
       console.error('fetchTotalCount failed:', e);
     }
+  }, []);
+
+  const syncEventsWithServer = useCallback(
+    async (reason: 'hourly' | 'login' | 'logout' | 'startup' | 'manual' = 'manual') => {
+      try {
+        console.log('[SYNC] start, reason =', reason);
+
+        // 1) Тянем с сервера ТОЛЬКО id (пагинация). Это минимум трафика.
+        const pageSize = 2000;
+        const serverIds = new Set<string>();
+        let page = 0;
+
+        for (;;) {
+          const from = page * pageSize;
+          const to   = from + pageSize - 1;
+
+          const { data, error } = await supabase
+            .from('events')
+            .select('id')
+            .order('id', { ascending: true })
+            .range(from, to);
+
+          if (error) {
+            console.error('[SYNC] error while fetching ids:', error);
+            break;
+          }
+
+          (data ?? []).forEach(row => serverIds.add(String(row.id)));
+          if (!data || data.length < pageSize) break;
+          page++;
+        }
+
+        // 2) Берём локальные id из IndexedDB
+        const localIds = await idbGetAllIds();
+
+        // 3) Разница
+        const idsToAdd: string[]    = [];
+        const idsToRemove: string[] = [];
+
+        for (const sid of serverIds) if (!localIds.has(sid)) idsToAdd.push(sid);
+        for (const lid of localIds)  if (!serverIds.has(lid)) idsToRemove.push(lid);
+
+        console.log(`[SYNC] toAdd=${idsToAdd.length}, toRemove=${idsToRemove.length}`);
+
+        // 4) Дозагружаем недостающие события (пакетами) и кладём в IDB + в память
+        for (let i = 0; i < idsToAdd.length; i += 1000) {
+          const slice = idsToAdd.slice(i, i + 1000);
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .in('id', slice);
+
+          if (error) {
+            console.error('[SYNC] error fetching missing rows:', error);
+            continue;
+          }
+
+          const batch = (data ?? []).map(normalizeEvent);
+
+          // в IDB
+          try { await idbPutEvents(batch); } catch (e) { console.warn('[SYNC] idbPutEvents error:', e); }
+
+          if (batch.length) {
+            // в память (UI)
+            setEvents(prev => {
+              const existing = new Set(prev.map(p => String(p.id)));
+              const add = batch.filter(ev => !existing.has(String(ev.id)));
+              return add.length ? [...prev, ...add] : prev;
+            });
+            setFilteredEvents(prev => {
+              const existing = new Set(prev.map(p => String(p.id)));
+              const add = batch.filter(ev => !existing.has(String(ev.id)));
+              return add.length ? [...prev, ...add] : prev;
+            });
+            for (const ev of batch) loadedEventIds.current.add(String(ev.id));
+          }
+        }
+
+        // 5) Удаляем лишние локальные (из IDB + из памяти)
+        if (idsToRemove.length) {
+          try { await idbBulkDelete(idsToRemove); } catch (e) { console.warn('[SYNC] idbBulkDelete error:', e); }
+          const removeSet = new Set(idsToRemove);
+          setEvents(prev => prev.filter(p => !removeSet.has(String(p.id))));
+          setFilteredEvents(prev => prev.filter(p => !removeSet.has(String(p.id))));
+          for (const id of idsToRemove) loadedEventIds.current.delete(String(id));
+        }
+
+        console.log('[SYNC] done');
+      } catch (e) {
+        console.error('[SYNC] failed:', e);
+      }
+    },
+    [setEvents, setFilteredEvents]
+  );
+
+  useEffect(() => {
+    // первый запуск — мягкий синк при старте (минимум трафика)
+    syncEventsWithServer('startup');
+
+    const iv = setInterval(() => {
+      syncEventsWithServer('hourly');
+    }, 60 * 60 * 1000); // раз в час
+
+    return () => clearInterval(iv);
+  }, [syncEventsWithServer]);
+
+  const bootedAllOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (bootedAllOnceRef.current) return;
+    bootedAllOnceRef.current = true;
+
+    (async () => {
+      try {
+        // 1) пробуем поднять всё из IndexedDB
+        const all = await idbGetAllEvents?.();
+        if (Array.isArray(all) && all.length) {
+          const fresh = all.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+          if (fresh.length) {
+            setEvents(prev => [...prev, ...fresh]);
+            setFilteredEvents(prev => [...prev, ...fresh]);
+            fresh.forEach(ev => loadedEventIds.current.add(String(ev.id)));
+          }
+          return; // кэш есть — на этом стоп
+        }
+
+        // 2) кэш пуст — один раз тащим все события из Supabase (странично)
+        const pageSize = 1000; // можно 500, если боишься нагрузки
+        let page = 0;
+        const toState: any[] = [];
+
+        for (;;) {
+          const from = page * pageSize;
+          const to   = from + pageSize - 1;
+
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, to);
+
+          if (error) {
+            console.error('[boot-all] supabase error:', error);
+            break;
+          }
+
+          const batch = (data ?? []).map(normalizeEvent);
+          if (!batch.length) break;
+
+          toState.push(...batch.filter(ev => !loadedEventIds.current.has(String(ev.id))));
+          try { await idbPutEvents(batch); } catch {}
+
+          if (batch.length < pageSize) break;
+          page++;
+        }
+
+        if (toState.length) {
+          setEvents(prev => [...prev, ...toState]);
+          setFilteredEvents(prev => [...prev, ...toState]);
+          toState.forEach(ev => loadedEventIds.current.add(String(ev.id)));
+        }
+      } catch (e) {
+        console.warn('[boot-all] failed:', e);
+        // ок, тогда просто ждём обычного fetchEventsInBounds
+      }
+    })();
   }, []);
 
   const fetchEventsInBounds = useCallback(
@@ -355,89 +452,29 @@ export default function EventMap() {
         const minLat = sw.lat(), maxLat = ne.lat();
         const minLng = sw.lng(), maxLng = ne.lng();
 
-        // 0) ключ тайла + TTL
-        const zoom = mapRef.current?.getZoom?.() ?? 13;
-        const viewportKey = makeViewportKey({ minLat, maxLat, minLng, maxLng }, zoom);
-        const TTL_MS = 5 * 60 * 1000; // 5 минут (можно менять)
+        // 👉 Только IndexedDB (никакой сети)
+        const cached = await idbGetEventsInBounds({ minLat, maxLat, minLng, maxLng });
 
-        // 1) СНАЧАЛА — показ из IndexedDB (мгновенно)
-        try {
-          const cached = await idbGetEventsInBounds({ minLat, maxLat, minLng, maxLng });
-          if (cached?.length) {
-            const fresh = cached.filter(ev => !loadedEventIds.current.has(String(ev.id)));
-            if (fresh.length) {
-              setEvents(prev => [...prev, ...fresh]);
-              setFilteredEvents(prev => [...prev, ...fresh]);
-              for (const ev of fresh) loadedEventIds.current.add(String(ev.id));
-            }
+        if (cached?.length) {
+          const fresh = cached.filter(ev => !loadedEventIds.current.has(String(ev.id)));
+          if (fresh.length) {
+            setEvents(prev => [...prev, ...fresh]);
+            setFilteredEvents(prev => [...prev, ...fresh]);
+            for (const ev of fresh) loadedEventIds.current.add(String(ev.id));
           }
-        } catch (e) {
-          console.warn('[IDB] read error (ignored):', e);
         }
 
-        // 2) Если тайл НЕ протух — выходим (не грузим сеть).
-        const stale = await idbIsTileStale(viewportKey, TTL_MS);
-        if (!stale) {
-          return;
-        }
-
-        // 3) Тянем сеть (как раньше), но теперь ещё и пишем в IndexedDB.
-        const pageSize = 200;
-        let page = 0;
-        const toState: any[] = [];
-
-        for (;;) {
-          const from = page * pageSize;
-          const to   = from + pageSize - 1;
-
-          const { data, error } = await supabase
-            .from('events')
-            .select('*')
-            .gte('lat', minLat).lte('lat', maxLat)
-            .gte('lng', minLng).lte('lng', maxLng)
-            .range(from, to);
-
-          if (error) {
-            console.error('[fetchEventsInBounds] supabase error:', error);
-            break;
-          }
-
-          const batch = (data ?? []).map(normalizeEvent);
-          if (!batch.length) break;
-
-          // в память — только те, которых ещё нет
-          const freshForState = batch.filter(ev => !loadedEventIds.current.has(String(ev.id)));
-          toState.push(...freshForState);
-          for (const ev of freshForState) loadedEventIds.current.add(String(ev.id));
-
-          // в IndexedDB — ВСЮ пачку (обновляем/вставляем)
-          try { await idbPutEvents(batch); } catch (e) {
-            console.warn('[IDB] put error (ignored):', e);
-          }
-
-          if (batch.length < pageSize) break;
-          page++;
-        }
-
-        if (toState.length) {
-          setEvents(prev => [...prev, ...toState]);
-          setFilteredEvents(prev => [...prev, ...toState]);
-        }
-
-        // 4) помечаем тайл как свежий
-        await idbMarkTileFetched(viewportKey);
-
-        // (необязательно, но оставим)
-        await fetchTotalCountForCurrentFilters();
+        // опционально — посчитаем общий total (по сети это не делаем)
+        // await fetchTotalCountForCurrentFilters(); // можно закомментировать, если мешает
       } catch (e) {
-        console.error('fetchEventsInBounds failed:', e);
-        // если сеть упала — просто остаёмся на кэше
+        console.error('fetchEventsInBounds failed (IDB-only):', e);
       } finally {
         fetchingRef.current = false;
       }
     },
     [ensureBounds, setEvents, setFilteredEvents]
   );
+
   
   const translateTypeUI = useCallback((type: string) => {
     const key = (typeTranslationKeys as Record<string, string>)[type];
@@ -451,7 +488,6 @@ export default function EventMap() {
     localStorage.setItem('lang', lang);
   };
   useEffect(() => {
-    console.log('🌍 Новый язык выбран:', i18n.language);
   }, [i18n.language]);
 
   type EventRow = {
@@ -531,22 +567,15 @@ export default function EventMap() {
     };
   }, []);
 
-  // 📣 Подписка на изменение авторизации
-
   const [viewCount, setViewCount] = useState(0);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-
-  // прочие состояния/ссылки
   const [translatedText, setTranslatedText] = useState('');
   const [showTranslation, setShowTranslation] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-
   const listRef = useRef<HTMLDivElement>(null!);
-
   const today = new Date();
   const nextMonth = new Date();
   nextMonth.setMonth(nextMonth.getMonth() + 1);
-
   const [dateRange, setDateRange] = useState<DateRange>([
     {
       startDate: today,
@@ -560,12 +589,10 @@ export default function EventMap() {
   const [filterPrice, setFilterPrice] = useState<string>('');
   const [viewedEvents, setViewedEvents] = useState<number[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showing, setShowing] = useState<'all'|'viewed'|'favorites'>('all');
   const [selectedEvent, setSelectedEvent] = useState<EventId | null>(null);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD);
   const [showFilters, setShowFilters] = useState(true);
   const [showEventList, setShowEventList] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
   console.log('🔍 EVENTS', events);
   console.log('🔍 FILTERS', {
@@ -659,78 +686,6 @@ export default function EventMap() {
   const [fbError, setFbError] = useState<string|null>(null);
   const [fbSuccess, setFbSuccess] = useState(false);
 
-    // ⚠️ Оставляю твои вспомогательные функции как были (верхнего уровня):
-  const handleEmailSignIn = async () => {
-    const email = prompt(t('auth.enter_email'));
-    if (email) {
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) {
-        alert(t('auth.email_error') + ': ' + error.message);
-      } else {
-        alert(t('auth.email_sent'));
-      }
-    }
-  };
-
-  const handleSmsSignIn = async () => {
-    const phone = prompt(t('auth.enter_phone'))?.trim();
-    if (!phone) { alert(t('auth.enter_phone')); return; }
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    if (error) {
-      alert(t('auth.sms_error') + ': ' + error.message);
-    } else {
-      setSmsSent(true);
-      setSmsCode('');
-    }
-  };
-
-  const verifySmsCode = async () => {
-    const phone = prompt(t('auth.enter_phone_again'));
-    const token = prompt(t('auth.enter_sms_code'));
-    if (phone && token) {
-      const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
-      if (error) {
-        alert(t('auth.code_error') + ': ' + error.message);
-      } else {
-        alert(t('auth.logged_in'));
-      }
-    }
-  };
-
-  const handleFeedbackSubmit = async () => {
-    if (!fbMessage.trim()) { setFbError(t('feedback.message_required')); return; }
-    setFbSending(true);
-    setFbError(null);
-    try {
-      // ✅ Берём свежую сессию прямо сейчас (устраняет гонку на десктопе)
-      const { data: { session: fresh }, error: sErr } = await supabase.auth.getSession();
-      if (sErr) console.warn('getSession error:', sErr);
-      const userId = fresh?.user?.id ?? session?.user?.id ?? null;
-
-      const { error } = await supabase
-        .from('feedback')
-        .insert([{
-          user_id: userId,
-          name: fbName.trim() || null,
-          email: fbEmail.trim() || null,
-          message: fbMessage.trim(),
-        }]);
-
-      if (error) {
-        console.error('feedback insert error:', error);
-        throw error;
-      }
-
-      setFbSuccess(true);
-      setFbName(''); setFbEmail(''); setFbMessage('');
-      setTimeout(() => { setShowFeedbackModal(false); setFbSuccess(false); }, 2000);
-    } catch (e: any) {
-      setFbError(e.message || t('feedback.error'));
-    } finally {
-      setFbSending(false);
-    }
-  };
-
   useEffect(() => {
     const url = new URL(window.location.href);
     const eventIdFromUrl = url.searchParams.get('event');
@@ -799,9 +754,6 @@ export default function EventMap() {
     return () => clearInterval(interval);
   }, [events]);
 
-  // эффекты
-  // СТАЛО: ждём, когда Google Map загрузится
-  // грузим события один раз при маунте — карта не нужна
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
 
@@ -893,6 +845,19 @@ export default function EventMap() {
             // попробуем восстановить в фоне (см. раздел 5).
           }
         }
+        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+          // ...
+          await syncEventsWithServer('login');
+
+          // ⬇️ синхронизируем избранное (см. раздел 2)
+          const u = newSession?.user ?? (await supabase.auth.getUser()).data.user ?? null;
+          if (u) await syncOfflineFavoritesToServer(u.id);
+        }
+
+        if (event === 'SIGNED_OUT') {
+          // ...
+          await syncEventsWithServer('logout');
+        }
       }
     );
 
@@ -941,17 +906,45 @@ export default function EventMap() {
         }
       } catch {}
 
-      // Без перезагрузки страницы: если карта готова и есть границы — можно
-      // дернуть fetchEventsInBounds (он сам решит: взять из IndexedDB или сеть)
-      if (mapRef.current?.getBounds()) {
-        fetchEventsInBounds(mapRef.current.getBounds()!);
+      // ждём реальные bounds, а не null
+      const b = await ensureBounds();
+      if (b) {
+        await fetchEventsInBounds(b);
       }
     };
 
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [fetchEventsInBounds]);
+  }, [fetchEventsInBounds, ensureBounds]);
 
+  useEffect(() => {
+    let stopped = false;
+
+    const tick = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data?.session) {
+          // нет сессии — тихо пробуем оживить
+          await supabase.auth.refreshSession().catch(() => {});
+        }
+      } catch {}
+    };
+
+    // первый тик — через 30с после старта, дальше каждые 5 минут
+    const t1 = setTimeout(() => { if (!stopped) tick(); }, 30_000);
+    const iv = setInterval(() => { if (!stopped) tick(); }, 5 * 60_000);
+
+    // если внезапно появился интернет — сразу тик
+    const onOnline = () => tick();
+    window.addEventListener('online', onOnline);
+
+    return () => {
+      stopped = true;
+      clearTimeout(t1);
+      clearInterval(iv);
+      window.removeEventListener('online', onOnline);
+    };
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -997,17 +990,6 @@ export default function EventMap() {
 
   useEffect(() => {
     fetchTotalEventsCount();
-  }, []);
-
-  useEffect(() => {
-    const ping = () => { supabase.auth.getUser().catch(() => {}); };
-    const onVisible = () => document.visibilityState === 'visible' && ping();
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', ping);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', ping);
-    };
   }, []);
 
   // 2. Подписка на таблицу events — отдельный useEffect
@@ -1119,30 +1101,6 @@ export default function EventMap() {
       ]);
     }
   }, [events]);
-
-  // helpers
-  const translateTypeLocal = (type: string) => {
-    const key = typeTranslationKeys[type as keyof typeof typeTranslationKeys];
-    if (key) {
-      const translated = t(key);
-      if (translated && translated !== key) return translated;
-    }
-    return type;
-  };
-
-  const saveUserToProfiles = async (user: any) => {
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('*').eq('id', user.id).single();
-    if (!existingProfile) {
-      await supabase.from('profiles').insert({
-        id: user.id, email: user.email, phone: user.phone,
-        name: user.user_metadata?.name || '',
-        language: i18n.language, is_subscribed: false,
-        created_at: new Date().toISOString()
-      });
-    }
-  };
 
   const manualLogoutRef = useRef(false);
 
@@ -1277,21 +1235,6 @@ export default function EventMap() {
     })();
   }, [mapStatus, events]);
 
-  const DateFilterTag = () => {
-    if (!dateRange[0].startDate || !dateRange[0].endDate) return null;
-    const formattedStart = formatDate(dateRange[0].startDate.toISOString());
-    const formattedEnd = formatDate(dateRange[0].endDate.toISOString());
-    return (
-      <div className="flex items-center bg-gray-200 text-gray-700 text-sm px-3 py-1 rounded-full">
-        <span>{formattedStart} - {formattedEnd}</span>
-        <button
-          onClick={() => setDateRange([{ startDate: null, endDate: null, key: 'selection' }])}
-          className="ml-2 text-gray-600 hover:text-gray-800"
-        >✕</button>
-      </div>
-    );
-  };
-
   // локальный хелпер для YYYY-MM-DD без сдвигов часового пояса
   const toYMD = (d: Date) => {
     const y = d.getFullYear();
@@ -1357,15 +1300,6 @@ export default function EventMap() {
     setVisibleCount(ITEMS_PER_LOAD);
   };
 
-  const handleCheckboxChange = (
-    setFilter: React.Dispatch<React.SetStateAction<string[]>>,
-    value: string
-  ) => {
-    setFilter((prev: string[]) =>
-      prev.includes(value) ? prev.filter((v: string) => v !== value) : [...prev, value]
-    );
-  };
-
   const DEFAULT_ICON = 'https://maps.google.com/mapfiles/ms/icons/ltblue-dot.png';
   const VALID_COLORS = new Set(['red','blue','green','yellow','purple','pink','orange','ltblue']);
 
@@ -1406,13 +1340,6 @@ export default function EventMap() {
 
   type ColorName = keyof typeof colorMap;
 
-  // 2) ОДНА функция (типизирована)
-  const getComputedColor = (colorName?: string): string => {
-    if (!colorName) return '#999999';
-    const normalized = colorName.trim().toLowerCase() as ColorName;
-    return colorMap[normalized] ?? '#999999';
-  };
-
   const formatDate = (d: string | Date): string => {
     const date = typeof d === 'string' ? new Date(d) : d;
     const day = String(date.getDate()).padStart(2, '0');
@@ -1428,14 +1355,6 @@ export default function EventMap() {
 
   const formatTime = (timeStr?: string | null): string =>
   typeof timeStr === 'string' ? timeStr.slice(0, 5) : '';
-
-  const getCurrentLocale = () => {
-    const lang = i18n.language;
-    const match = availableLanguages.find(l => l.code === lang);
-    return match?.locale || ru;
-  };
-
-  const mapClickHandler = () => { setSelectedEvent(null); };
 
   const scrollToEvent = (eventId: EventId): void => {
     const index = filteredByView.findIndex((ev: ItemWithId) => ev.id === eventId);
@@ -1467,32 +1386,6 @@ export default function EventMap() {
   };
 
   const promoText = t('auth.promo');
-
-  const handleSmsSend = async () => {
-    setSmsError(null);
-    if (!phone.trim()) { setSmsError(t('auth.phone_required')); return; }
-    try {
-      setSmsLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({ phone: phone.trim() });
-      if (error) throw error;
-      setSmsStep('enter_code');
-    } catch (e: any) {
-      setSmsError(e.message || t('auth.sms_error'));
-    } finally {
-      setSmsLoading(false);
-    }
-  };
-
-  const handleVerifySms = async () => {
-    if (!phone || !smsCode) return;
-    const { error } = await supabase.auth.verifyOtp({ phone, token: smsCode, type: 'sms' });
-    if (error) {
-      alert(t('auth.code_error') + ': ' + error.message);
-    } else {
-      setPhone(''); setSmsCode(''); setSmsSent(false);
-      setShowAuthPrompt(false); setViewCount(0);
-    }
-  };
 
   const formatWebsite = (url?: string | null): string => {
     if (!url) return '';
@@ -1695,39 +1588,6 @@ export default function EventMap() {
     return Array.isArray(data?.favorites) ? data!.favorites as string[] : [];
   };
 
-  const saveFavoritesToProfile = async (userId: string, favs: string[]) => {
-    const unique = Array.from(new Set(favs.map(String)));
-    console.log('[SAVE]', unique);
-
-    const { error } = await supabase
-      .from('profiles')
-      .upsert(
-        {
-          id: userId,
-          favorites: unique, // ← напрямую массив, без join
-        },
-        { onConflict: 'id' }
-      );
-
-    if (error) throw error;
-    return unique;
-  };
-
-  // очистка: оставить только те избранные, которые реально есть в events
-  const pruneFavoritesAgainstEvents = async (favs: FavoriteId[]) => {
-    if (!favs.length) return favs;
-    const { data, error } = await supabase
-      .from('events')
-      .select('id')
-      .in('id', favs);
-    if (error) {
-      console.warn('[favorites] prune check error:', error.message);
-      return favs; // не ломаем UX, просто вернем как есть
-    }
-    const exist = new Set((data ?? []).map((r: any) => Number(r.id)));
-    return favs.filter(id => exist.has(Number(id)));
-  };
-
   const navBtn =
     "px-4 py-2 rounded-full bg-white/95 hover:bg-white border border-gray-200 " +
     "shadow text-sm font-medium text-gray-800 backdrop-blur " +
@@ -1738,13 +1598,72 @@ export default function EventMap() {
 
   const handleClearStorage = async () => {
     try {
+      // 1) Чистим только UI-настройки карты (как раньше)
       localStorage.removeItem('map_center');
       localStorage.removeItem('map_zoom');
       localStorage.removeItem('saved_center');
       localStorage.removeItem('saved_zoom');
-      await idbClearAll(); // <— добавили очистку IndexedDB
-    } catch {}
-    window.location.reload();
+
+      // 2) Проверяем сессию
+      const { data } = await supabase.auth.getSession();
+
+      if (!data?.session) {
+        // ⛔ Сессии нет — события в IndexedDB НЕ трогаем!
+        // Пытаемся тихо восстановить — и только ПОТОМ чистим/перезаливаем
+        await supabase.auth.refreshSession().catch(() => {});
+        const ok = await waitForSessionRestore(5000); // у тебя эта функция уже есть
+        if (!ok) {
+          alert('Сессия не восстановлена. Кэш событий не трогаем.');
+          return;
+        }
+      }
+
+      // 3) Есть сессия — теперь можно полностью очистить кэш событий
+      await idbClearAll();
+      loadedEventIds.current.clear();
+      setEvents([]);
+      setFilteredEvents([]);
+
+      // 4) Заливаем ВСЕ события из Supabase в IndexedDB (странично)
+      const pageSize = 1000;
+      let page = 0;
+      const toState: any[] = [];
+
+      for (;;) {
+        const from = page * pageSize;
+        const to   = from + pageSize - 1;
+
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, to);
+
+        if (error) {
+          console.error('[clear->reload] supabase error:', error);
+          break;
+        }
+
+        const batch = (data ?? []).map(normalizeEvent);
+        if (!batch.length) break;
+
+        toState.push(...batch);
+        try { await idbPutEvents(batch); } catch {}
+
+        if (batch.length < pageSize) break;
+        page++;
+      }
+
+      // 5) Обновляем состояние (все события уже в кэше)
+      setEvents(toState);
+      setFilteredEvents(toState);
+      for (const ev of toState) loadedEventIds.current.add(String(ev.id));
+
+      alert('Кэш очищен и события перезагружены.');
+
+    } catch (e) {
+      console.warn('[Clear storage] error:', e);
+    }
   };
 
   const handleNavigate = (path: string) => {
