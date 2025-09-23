@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 import I18nProvider from '../components/i18nProvider';
+import ClientWrapper from '../components/ClientWrapper'; // ⬅️ добавить импорт
 
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -34,8 +35,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <ClientWrapper>
+            {children}
+          </ClientWrapper>
+        </I18nProvider>
       </body>
     </html>
   );
 }
+

@@ -1,16 +1,20 @@
 'use client';
 
 import { useSessionReady } from '../hooks/useSessionReady';
-import FullScreenLoader from './FullScreenLoader';
+import { useSupabaseAuthListener } from '../hooks/useSupabaseAuthListener';
 import InstallPrompt from './InstallPrompt';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ClientWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const ready = useSessionReady();
+  const { t } = useTranslation();
+  const ready = useSessionReady();    // проверка сессии при старте
+  useSupabaseAuthListener();          // слушаем изменения сессии
+
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   useEffect(() => {
@@ -18,13 +22,13 @@ export default function ClientWrapper({
     return () => clearTimeout(timer);
   }, []);
 
-  if (!ready) return <FullScreenLoader />;
-  if (!ready && timeoutReached)
+  if (!ready && timeoutReached) {
     return (
       <div className="fixed inset-0 flex items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center">
-        Load has failed. Please reload the page.
+        {t('auth.load_failed')}
       </div>
     );
+  }
 
   return (
     <>

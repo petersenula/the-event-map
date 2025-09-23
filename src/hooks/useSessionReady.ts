@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabase/client';
 
@@ -9,23 +10,23 @@ export function useSessionReady() {
 
     const check = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        console.log('👤 Supabase session:', session); // для отладки
-
-        if (isMounted) setReady(true); // Устанавливаем готовность в любом случае
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('🟢 Supabase session при старте:', session);
       } catch (err) {
-        console.error('❌ Ошибка при получении сессии:', err);
-        if (isMounted) setReady(true); // Всё равно продолжаем
+        console.error('🔴 Ошибка при получении сессии:', err);
+      } finally {
+        if (isMounted) setReady(true);
       }
     };
 
     check();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
+
+  useEffect(() => {
+  supabase.auth.startAutoRefresh();
+  return () => supabase.auth.stopAutoRefresh();
+}, []);
 
   return ready;
 }
