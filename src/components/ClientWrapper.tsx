@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useSessionReady } from '../hooks/useSessionReady';
+import { useSupabaseAuthListener } from '../hooks/useSupabaseAuthListener';
 import InstallPrompt from './InstallPrompt';
-import { useSessionReady } from '@/hooks/useSessionReady';
-import { useSupabaseAuthListener } from '@/hooks/useSupabaseAuthListener';
+import { useEffect, useState } from 'react';
 
 export default function ClientWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const ready = useSessionReady(); // проверка сессии при старте
-  useSupabaseAuthListener(); // слушаем изменения сессии
+  const ready = useSessionReady();    // проверка сессии при старте
+  useSupabaseAuthListener();          // слушаем изменения сессии
 
   const [timeoutReached, setTimeoutReached] = useState(false);
 
@@ -20,17 +20,18 @@ export default function ClientWrapper({
     return () => clearTimeout(timer);
   }, []);
 
-  const showLoadingNotice = !ready && !timeoutReached;
+  if (!ready && timeoutReached) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center">
+        Load has failed. Please reload the page.
+      </div>
+    );
+  }
 
   return (
     <>
       <InstallPrompt />
       {children}
-      {showLoadingNotice && (
-        <div className="fixed bottom-4 right-4 z-50 bg-white text-gray-700 px-3 py-2 text-sm rounded shadow-lg border border-gray-200 opacity-90">
-          Loading session...
-        </div>
-      )}
     </>
   );
 }
