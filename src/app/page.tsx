@@ -199,7 +199,7 @@ export default function EventMap() {
     ]);
 
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('sb-')) continue; // ⚠️ НЕ трогаем supabase-сессию
+      if (key.startsWith('sb-') && key.startsWith('supabase.')) continue; // ⚠️ НЕ трогаем supabase-сессию
       if (!keep.has(key)) localStorage.removeItem(key);
     }
   }, []);
