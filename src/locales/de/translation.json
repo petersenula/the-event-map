@@ -13,11 +13,14 @@
     "outdoor": "Draußen",
     "type": "Typ",
     "apply": "Filter anwenden",
-    "reset": "Filter zurücksetzen",
-    "children": "Kinder",
-    "adults": "Erwachsene",
-    "any_format": "Семья"
+    "reset": "Filter zurücksetzen"
   },
+
+  "format": {
+    "any": "Familie",
+    "children": "Kinder",
+    "adults": "Erwachsene"
+},
   "types": {
     "culture": "Kultur",
     "exhibition": "Ausstellung",

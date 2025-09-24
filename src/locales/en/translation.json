@@ -15,9 +15,13 @@
     "apply": "Apply filters",
     "reset": "Reset filters",
     "children": "Children",
-    "adults": "Adults",
-    "any_format": "Family"
+    "adults": "Adults"
   },
+"format": {
+    "any": "Family",
+    "children": "Children",
+    "adults": "Adults"
+},
   "types": {
     "culture": "Culture",
     "exhibition": "Exhibition",

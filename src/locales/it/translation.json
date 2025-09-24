@@ -13,11 +13,14 @@
     "type": "Tipo",
     "apply": "Applica filtri",
     "reset": "Ripristina filtri",
-    "children": "Bambini",
-    "adults": "Adulti",
-    "any": "Qualsiasi",
-    "any_format": "Famiglia"
+    "any": "Qualsiasi"
+ 
   },
+   "format": {
+    "any":  "Famiglia",
+    "children": "Bambini",
+    "adults": "Adulti"
+},
   "types": {
     "culture": "Cultura",
     "exhibition": "Mostra",
