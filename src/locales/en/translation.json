@@ -77,7 +77,10 @@
     "code_sent_to": "Code sent to",
     "change_phone": "Change number",
     "loading": "Please wait...",
-    "home_saved": "Home location has been saved."
+    "home_saved": "Home location has been saved.",
+    "unexpected_error": "Unexpected error",
+    "code_error": "Error verifying the code",
+    "login_error": "Login error"
   },
 
   "profile": {

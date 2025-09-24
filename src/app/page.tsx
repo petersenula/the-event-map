@@ -951,10 +951,6 @@ const syncEventsWithServer = useCallback(
           } else {
             await syncEventsWithServer('login');
           }
-
-          // ⬇️ оффлайн-фавориты
-          const u = user ?? (await supabase.auth.getUser()).data.user ?? null;
-          if (u) await syncOfflineFavoritesToServer(u.id);
         }
 
         if (event === 'SIGNED_OUT') {
@@ -983,10 +979,6 @@ const syncEventsWithServer = useCallback(
         if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
           // ...
           await syncEventsWithServer('login');
-
-          // ⬇️ синхронизируем избранное (см. раздел 2)
-          const u = newSession?.user ?? (await supabase.auth.getUser()).data.user ?? null;
-          if (u) await syncOfflineFavoritesToServer(u.id);
         }
 
         if (event === 'SIGNED_OUT') {

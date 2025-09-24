@@ -82,7 +82,11 @@
   "code_sent_to": "Codice inviato a",
   "change_phone": "Cambia numero",
   "loading": "Attendere...",
-  "home_saved": "La posizione di casa è stata salvata."
+  "home_saved": "La posizione di casa è stata salvata.",
+  "unexpected_error": "Errore imprevisto",
+  "code_error": "Errore nella verifica del codice",
+  "login_error": "Errore di accesso"
+
 },
 
 "ui": {

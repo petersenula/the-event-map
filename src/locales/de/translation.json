@@ -76,7 +76,11 @@
     "code_sent_to": "Code gesendet an",
     "change_phone": "Nummer ändern",
     "loading": "Bitte warten...",
-    "home_saved": "Heimatstandort wurde gespeichert."
+    "home_saved": "Heimatstandort wurde gespeichert.",
+    "unexpected_error": "Unerwarteter Fehler",
+    "code_error": "Fehler bei der Code-Überprüfung",
+    "login_error": "Anmeldefehler"
+
   },
 
   "Select Dates": "Daten auswählen",

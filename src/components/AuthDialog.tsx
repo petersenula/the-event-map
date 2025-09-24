@@ -45,11 +45,24 @@ export default function AuthDialog({ show, onClose, setViewCount }: Props) {
     setSmsLoading(true);
     setSmsError(null);
     try {
-      const { error } = await supabase.auth.verifyOtp({ phone, token: smsCode, type: 'sms' });
-      if (error) setSmsError(error.message);
-      else window.location.reload();
-    } catch (err) {
-      setSmsError('Unexpected error');
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: smsCode,
+        type: 'sms',
+      });
+
+      if (error) {
+        setSmsError(error.message);
+      } else if (data?.session) {
+        console.log('✅ Успешный логин через SMS:', data.session.user);
+        onClose(); // закрыть модалку
+        window.location.reload(); // перезагрузить, если тебе нужно обновить состояние
+      } else {
+        setSmsError('Не удалось создать сессию. Попробуйте снова.');
+      }
+    } catch (err: any) {
+      console.error('SMS login exception', err);
+      setSmsError('Unexpected error: ' + (err.message || ''));
     } finally {
       setSmsLoading(false);
     }
