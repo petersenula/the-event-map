@@ -1,10 +1,11 @@
-'use client'
+'use client';
 
 import React, { useRef, useState, useCallback } from 'react';
 import { Autocomplete } from '@react-google-maps/api';
 import { Home, Locate } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/utils/supabase/client';
+import { useHomeLocation } from '@/hooks/useHomeLocation'; // 👈 добавлено
 
 const isMobile = typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
 
@@ -19,12 +20,19 @@ const HomeLocationModal: React.FC<Props> = ({ onClose, onSaved, mapRef }) => {
   const [locating, setLocating] = useState(false);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
+  const { updateHomeLocation } = useHomeLocation(); // 👈 добавлено
+
   const saveLocation = async (lat: number, lng: number, label: string, source: string) => {
     const location = { lat, lng, label, source };
+
+    // Сохраняем в Supabase
     const { error } = await supabase
       .from('profiles')
       .update({ home_location: location })
       .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+    // Сохраняем в localStorage
+    updateHomeLocation({ lat, lng }); // 👈 добавлено
 
     if (!error) {
       onSaved();
@@ -95,6 +103,7 @@ const HomeLocationModal: React.FC<Props> = ({ onClose, onSaved, mapRef }) => {
             {locating ? t('geo.locating') : t('geo.useMyLocation')}
           </button>
         )}
+
         {/* OR text */}
         <div className="text-center text-gray-500 text-sm font-medium">{t('geo.or')}</div>
 
@@ -114,14 +123,14 @@ const HomeLocationModal: React.FC<Props> = ({ onClose, onSaved, mapRef }) => {
         </div>
 
         {/* Button to pick on map (временно закомментировано) */}
-        {/* 
+        {/*
         <button
           onClick={() => alert('Выбор точки на карте мы добавим позже')}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 flex items-center justify-center gap-2 hover:bg-gray-50"
         >
           <MapPin className="w-4 h-4" />
           {t('geo.pickOnMap')}
-        </button> 
+        </button>
         */}
       </div>
     </div>

@@ -29,7 +29,6 @@ import MapLayer from '@/components/MapLayer';
 import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
-import { forceUpdateToLatestCode } from '@/lib/swUpdate';
 import {
   idbGetEventsInBounds,
   idbPutEvents,
@@ -169,7 +168,7 @@ function RefreshSpinner() {
           d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
         ></path>
       </svg>
-      <span>Обновляем...</span>
+      <span>Updating...</span>
     </div>
   );
 }
@@ -824,7 +823,7 @@ const syncEventsWithServer = useCallback(
       }
 
       if (found) {
-        setSelectedEvent(found);
+        setSelectedEvent(found.id);
 
         if (found.lat && found.lng && mapRef.current) {
           mapRef.current.panTo({ lat: found.lat, lng: found.lng });
@@ -1691,7 +1690,7 @@ const syncEventsWithServer = useCallback(
         const currentZoom = mapRef.current.getZoom() ?? 0;
         if (currentZoom < 12) mapRef.current.setZoom(12);
       }
-      setSelectedEvent(ev);
+      setSelectedEvent(ev.id);
       scrollIntoView?.(ev.id);
     }
 
@@ -2163,7 +2162,7 @@ const syncEventsWithServer = useCallback(
       {showHomeModal && (
         <HomeLocationModal
           onClose={() => setShowHomeModal(false)}
-          onSaved={() => alert('Домашнее местоположение сохранено!')}
+          onSaved={() => alert(t('home_saved'))}
           mapRef={mapRef}
         />
       )}

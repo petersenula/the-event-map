@@ -15,7 +15,8 @@
     "reset": "Ripristina filtri",
     "children": "Bambini",
     "adults": "Adulti",
-    "any": "Qualsiasi"
+    "any": "Qualsiasi",
+    "any_format": "Famiglia"
   },
   "types": {
     "culture": "Cultura",
@@ -52,9 +53,10 @@
   "Start of period": "Inizio del periodo",
   "End of period": "Fine del periodo",
   "refreshing_events": "Aggiornamento degli eventi...",
+  "home_saved": "La posizione di casa è stata salvata.",
 
 "auth": {
-  "promo": "Per continuare, registrati! È veloce e gratuito.",
+  "promo": "Per continuare, registrati!",
   "google": "Accedi con Google",
   "apple": "Accedi con Apple",
   "email": "Ricevi il link via email",
@@ -64,7 +66,7 @@
   "enter_email": "Inserisci il tuo indirizzo email:",
   "email_sent": "Link inviato! Controlla la tua casella di posta.",
   "email_error": "Errore durante l’invio del link",
-  "enter_phone": "Inserisci il tuo numero di telefono in formato internazionale, es. +41791112233",
+  "enter_phone": "Inserisci il tuo numero di telefono, es. +41791112233",
   "sms_sent": "Codice inviato! Inseriscilo quando lo ricevi.",
   "sms_error": "Errore durante l’invio dell’SMS",
   "enter_phone_again": "Inserisci di nuovo il numero di telefono",
@@ -73,10 +75,11 @@
   "logged_in": "Accesso effettuato!",
   "login_error": "Errore di accesso",
   "phone_required": "Inserisci il tuo numero di telefono",
-  "phone_placeholder": "Inserisci il tuo numero di telefono in formato internazionale, es. +41791112233",
+  "phone_placeholder": "Inserisci il tuo numero di telefono, es. +41791112233",
   "code_sent_to": "Codice inviato a",
   "change_phone": "Cambia numero",
-  "loading": "Attendere..."
+  "loading": "Attendere...",
+  "home_saved": "La posizione di casa è stata salvata."
 },
 
 "ui": {

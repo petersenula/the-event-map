@@ -15,7 +15,8 @@
     "apply": "Apply filters",
     "reset": "Reset filters",
     "children": "Children",
-    "adults": "Adults"
+    "adults": "Adults",
+    "any_format": "Family"
   },
   "types": {
     "culture": "Culture",
@@ -49,7 +50,7 @@
     "other": "Other"
   },
   "auth": {
-    "promo": "To continue, please sign up. It’s quick and free.",
+    "promo": "To continue, please sign up.",
     "google": "Sign in with Google",
     "apple": "Sign in with Apple",
     "email": "Get a link by email",
@@ -59,7 +60,7 @@
     "enter_email": "Enter your email to sign in:",
     "email_sent": "Link sent! Check your email.",
     "email_error": "Error sending the link",
-    "enter_phone": "Enter your phone number in international format, e.g. +41791112233",
+    "enter_phone": "Enter your phone number, e.g. +41791112233",
     "sms_sent": "Code sent! Enter it when received.",
     "sms_error": "Error sending SMS",
     "enter_phone_again": "Enter the phone number again",
@@ -68,10 +69,11 @@
     "logged_in": "You are logged in!",
     "login_error": "Login error",
     "phone_required": "Please enter your phone number",
-    "phone_placeholder": "Enter your phone number in international format, e.g. +41791112233",
+    "phone_placeholder": "Enter your phone number, e.g. +41791112233",
     "code_sent_to": "Code sent to",
     "change_phone": "Change number",
-    "loading": "Please wait..."
+    "loading": "Please wait...",
+    "home_saved": "Home location has been saved."
   },
 
   "profile": {
@@ -128,6 +130,7 @@
   "Select Dates": "Select Dates",
   "Start of period": "Start of period",
   "End of period": "End of period",
-  "refreshing_events": "Refreshing events..."
+  "refreshing_events": "Refreshing events...",
+  "home_saved": "Home location has been saved."
 
 }

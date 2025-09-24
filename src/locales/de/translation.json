@@ -15,7 +15,8 @@
     "apply": "Filter anwenden",
     "reset": "Filter zurücksetzen",
     "children": "Kinder",
-    "adults": "Erwachsene"
+    "adults": "Erwachsene",
+    "any_format": "Семья"
   },
   "types": {
     "culture": "Kultur",
@@ -49,7 +50,7 @@
     "other": "Sonstiges"
   },
   "auth": {
-    "promo": "Bitte registriere dich, um fortzufahren. Es ist schnell und kostenlos.",
+    "promo": "Bitte registriere dich, um fortzufahren.",
     "google": "Mit Google anmelden",
     "apple": "Mit Apple anmelden",
     "email": "Link per E-Mail erhalten",
@@ -59,7 +60,7 @@
     "enter_email": "Gib deine E-Mail-Adresse ein:",
     "email_sent": "Link gesendet! Bitte überprüfe deine E-Mail.",
     "email_error": "Fehler beim Senden des Links",
-    "enter_phone": "Gib deine Telefonnummer im internationalen Format ein, z.B. +41791112233",
+    "enter_phone": "Gib deine Telefonnummer ein, z.B. +41791112233",
     "sms_sent": "Code gesendet! Bitte eingeben, wenn du ihn erhältst.",
     "sms_error": "Fehler beim Senden der SMS",
     "enter_phone_again": "Gib erneut die Telefonnummer ein",
@@ -68,17 +69,18 @@
     "logged_in": "Du bist eingeloggt!",
     "login_error": "Fehler beim Login",
     "phone_required": "Bitte gib deine Telefonnummer ein",
-    "phone_placeholder": "Gib deine Telefonnummer im internationalen Format ein, z.B. +41791112233",
+    "phone_placeholder": "Gib deine Telefonnummer ein, z.B. +41791112233",
     "code_sent_to": "Code gesendet an",
     "change_phone": "Nummer ändern",
-    "loading": "Bitte warten..."
+    "loading": "Bitte warten...",
+    "home_saved": "Heimatstandort wurde gespeichert."
   },
 
   "Select Dates": "Daten auswählen",
   "Start of period": "Beginn des Zeitraums",
   "End of period": "Ende des Zeitraums",
   "refreshing_events": "Ereignisse werden aktualisiert...",
-
+  "home_saved": "Heimatstandort wurde gespeichert.",
 
     "ui": {
     "showList": "Als Liste anzeigen",

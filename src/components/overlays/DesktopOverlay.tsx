@@ -395,7 +395,7 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
 
                     <p className="text-sm font-bold text-gray-800">{t('filters.for')}</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      {['any', 'children', 'adults'].map((format) => {
+                      {['any_format', 'children', 'adults'].map((format) => {
                         const isSelected = filterFormat.includes(format);
                         return (
                           <button

@@ -8,15 +8,16 @@ export default function Callback() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        console.log('[Callback] session OK → redirect to /');
-      } else {
-        console.warn('[Callback] no session found');
-      }
-      router.replace('/');
-    });
+    // Не ждём сессию, просто идём на главную
+    router.replace('/');
+
+    // ⚠️ Авто-восстановление сессии будет происходить в фоне
+    // через useSupabaseAuthListener + useSessionReady
   }, [router]);
 
-  return <p>Processing authorisation…</p>;
+  return (
+    <div className="fixed inset-0 flex items-center justify-center text-gray-700 text-sm">
+      Processing authorisation...
+    </div>
+  );
 }

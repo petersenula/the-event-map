@@ -512,7 +512,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               </div>
               <p className="text-sm font-bold text-gray-800 mb-2">{t('filters.for')}</p>
               <div className="grid grid-cols-3 gap-2 mb-3 text-xs">
-                {['any', 'children', 'adults'].map((format) => {
+                {['any_format', 'children', 'adults'].map((format) => {
                   const isSelected = filterFormat.includes(format);
                   return (
                     <button

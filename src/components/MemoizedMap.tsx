@@ -1,9 +1,10 @@
-// src/components/MemoizedMap.tsx
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
-import { Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon } from 'lucide-react';
+import {
+  Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface Props {
@@ -40,6 +41,9 @@ interface Props {
   downloadICS: (ics: string, filename: string) => void;
   makeGoogleCalendarUrl: (ev: any) => string;
   shareEvent: (ev: any) => void;
+
+  /** ← НОВОЕ: координаты домашнего местоположения (если есть) */
+  homeLocation?: { lat: number; lng: number } | null;
 }
 
 const MemoizedMap: React.FC<Props> = ({
@@ -65,12 +69,30 @@ const MemoizedMap: React.FC<Props> = ({
   downloadICS,
   makeGoogleCalendarUrl,
   shareEvent,
+  homeLocation, // ← НОВОЕ
 }) => {
   const selected = selectedId
     ? events.find((ev) => String(ev.id) === selectedId)
     : null;
 
   const isSelectedFav = selected ? favorites.includes(String(selected.id)) : false;
+
+  // ===== SVG-иконка ДОМ =====
+  const makeHomeIcon = (size = 30) => {
+    const s = size;
+    const strokeColor = '#6B7280'; // светло-серый (tailwind gray-500)
+    const fillColor = '#E5E7EB'; // tailwind gray-200
+
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="11" fill="white" stroke="${strokeColor}" stroke-width="1.5" />
+        <path d="M12 5l5 4.5v7.5h-3v-5H10v5H7V9.5L12 5z"
+              fill="${strokeColor}" stroke="white" stroke-width="1" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+  };
 
   // ====== 1) Группируем события по координатам ======
   type Group = {
@@ -85,7 +107,6 @@ const MemoizedMap: React.FC<Props> = ({
     for (const ev of events) {
       const lat = Number(ev.lat);
       const lng = Number(ev.lng);
-      // Чуть округлим, чтобы микросдвиги попадали в одну группу (≈ 0.11м)
       const key = `${lat.toFixed(6)}|${lng.toFixed(6)}`;
       const g = map.get(key);
       if (g) {
@@ -98,7 +119,7 @@ const MemoizedMap: React.FC<Props> = ({
     return Array.from(map.values());
   }, [events]);
 
-  // SVG-иконка кольца (полупрозрачное свечение под маркером)
+  // SVG-иконка кольца (подсветка под маркером)
   const makeRingIcon = (diameter = 44, color = '#60A5FA') => {
     const radius = diameter / 2 - 2;
     const svg = `
@@ -133,10 +154,8 @@ const MemoizedMap: React.FC<Props> = ({
       const zoom = mapRef.current?.getZoom() ?? 14;
       const { lat, lng } = group.center;
 
-      // Пиксельный радиус разлёта
-      const rPx = Math.min(60, 26 + n * 4); // чуть растёт с количеством
+      const rPx = Math.min(60, 26 + n * 4);
 
-      // Перевод пикселей в метры для данного зума и широты
       const EARTH_RADIUS = 6378137; // м
       const metersPerPixel =
         (Math.cos((lat * Math.PI) / 180) * 2 * Math.PI * EARTH_RADIUS) /
@@ -144,14 +163,12 @@ const MemoizedMap: React.FC<Props> = ({
 
       const rMeters = rPx * metersPerPixel;
 
-      // Метров в градус широты/долготы
       const metersPerDegLat = 111320;
       const metersPerDegLng = 111320 * Math.cos((lat * Math.PI) / 180);
 
       const dLat = rMeters / metersPerDegLat;
       const dLng = rMeters / metersPerDegLng;
 
-      // Раскладываем по окружности
       const arr: { lat: number; lng: number }[] = [];
       for (let i = 0; i < n; i++) {
         const t = (2 * Math.PI * i) / n;
@@ -189,7 +206,6 @@ const MemoizedMap: React.FC<Props> = ({
         mapRef.current = map;
         setMapReady(true);
         onLoad(map);
-        // при изменении зума схлопываем разлёт
         map.addListener('zoom_changed', () => setExpandedKey(null));
       }}
       onUnmount={(map) => {
@@ -199,9 +215,29 @@ const MemoizedMap: React.FC<Props> = ({
       onClick={handleMapClick}
       onDragEnd={handleDragEnd}
     >
+      {/* ===== НОВОЕ: маркер домашнего местоположения ===== */}
+      {homeLocation && (() => {
+        const g = typeof window !== 'undefined' ? (window as any).google : undefined;
+        console.log('🏠 Rendering home marker at', homeLocation, 'google =', !!g);
+        const size = 30;
+        return (
+          <Marker
+            key="home-marker"// 👈 ключ, чтобы не кешировался
+            position={homeLocation}
+            zIndex={2000}
+            clickable={false}
+            icon={{
+              url: makeHomeIcon(size, '#111827'),                 // домик (тёмно-серый)
+              scaledSize: g ? new g.maps.Size(size, size) : undefined,
+              anchor: g ? new g.maps.Point(size / 2, size - 2) : undefined
+            }}
+            title="Home"
+          />
+        );
+      })()}
+
       {/* ====== 3) Рисуем либо «свернутую» группу, либо «разлёт» ====== */}
       {groups.flatMap((group) => {
-        // если группа развернута — рисуем все её элементы по окружности
         if (expandedKey === group.key && group.size > 1) {
           return circlePositions(group).map((pos, i) => {
             const g = (typeof window !== 'undefined' ? (window as any).google : undefined);
@@ -210,7 +246,6 @@ const MemoizedMap: React.FC<Props> = ({
 
             return (
               <React.Fragment key={`exp-wrap-${group.key}-${i}`}>
-                {/* подсветка-кольцо */}
                 {g && (
                   <Marker
                     key={`ring-${group.key}-${i}`}
@@ -225,7 +260,6 @@ const MemoizedMap: React.FC<Props> = ({
                   />
                 )}
 
-                {/* основной маркер */}
                 <Marker
                   key={`marker-${group.key}-${i}`}
                   position={pos}
@@ -240,7 +274,6 @@ const MemoizedMap: React.FC<Props> = ({
           });
         }
 
-        // если группа не раскрыта → один общий маркер
         const ev0 = group.items[0];
         const label =
           group.size > 1
@@ -283,9 +316,7 @@ const MemoizedMap: React.FC<Props> = ({
                 <Calendar className="w-4 h-4 text-gray-600" />
                 {selected.start_date === selected.end_date
                   ? formatDate(selected.start_date)
-                  : `${formatDate(selected.start_date)} - ${formatDate(
-                      selected.end_date
-                    )}`}
+                  : `${formatDate(selected.start_date)} - ${formatDate(selected.end_date)}`}
               </p>
             )}
             <p className="mb-1 flex items-center gap-1">
@@ -293,9 +324,7 @@ const MemoizedMap: React.FC<Props> = ({
               <span className="flex-1">{selected.address}</span>
               <button
                 onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(selected.address ?? '');
-                  } catch {}
+                  try { await navigator.clipboard.writeText(selected.address ?? ''); } catch {}
                 }}
                 className="p-1 hover:bg-gray-200 rounded"
                 title="Copy address"
@@ -362,10 +391,17 @@ const MemoizedMap: React.FC<Props> = ({
 };
 
 function areEqual(prev: Props, next: Props) {
+  const sameHome =
+    (!!prev.homeLocation === !!next.homeLocation) &&
+    (!prev.homeLocation ||
+      (prev.homeLocation.lat === next.homeLocation!.lat &&
+       prev.homeLocation.lng === next.homeLocation!.lng));
+
   return (
     prev.selectedId === next.selectedId &&
     prev.events === next.events &&
-    prev.favorites === next.favorites
+    prev.favorites === next.favorites &&
+    sameHome // ← учитываем изменения домашней точки
   );
 }
 

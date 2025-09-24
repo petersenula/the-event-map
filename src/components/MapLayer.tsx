@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import MemoizedMap from './MemoizedMap';
 import { supabase } from '@/utils/supabase/client';
+import { useHomeLocation } from '@/hooks/useHomeLocation';
 
 interface MapLayerProps {
   setMapReady: (ready: boolean) => void; 
@@ -108,6 +109,8 @@ const MapLayer: React.FC<MapLayerProps> = ({
         } catch {}
     }, []);
 
+    const { homeLocation, updateHomeLocation } = useHomeLocation();
+
     useEffect(() => {
         // ждём готовности карты, иначе эффект может сработать раньше onLoad
         if (!mapReady || !mapRef.current) return;
@@ -115,11 +118,6 @@ const MapLayer: React.FC<MapLayerProps> = ({
         const checkAndSetHomeLocation = async () => {
             try {
             // ⚠️ если только что восстановились — пропускаем "дом" ОДИН РАЗ
-            if (localStorage.getItem('skip_home_once') === 'true') {
-                console.log('[HOME LOCATION] skipped once due to restore');
-                localStorage.removeItem('skip_home_once'); // одноразово
-                return;
-            }
 
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
@@ -137,6 +135,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
 
             if (profileData?.home_location && mapRef.current) {
                 const { lat, lng } = profileData.home_location;
+                updateHomeLocation({ lat, lng });
                 mapRef.current.panTo({ lat, lng }); // плавно
                 mapRef.current.setZoom(12);
 
@@ -342,6 +341,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
       )}
       {mapStatus === 'ready' && (
         <MemoizedMap
+          homeLocation={homeLocation}
           setMapReady={setMapReady}
           favorites={favorites.map(String)}
           mapContainerStyle={mapContainerStyle}
