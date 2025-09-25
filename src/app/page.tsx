@@ -1618,7 +1618,7 @@ const syncEventsWithServer = useCallback(
 
   // Web Share API + фолбэк в буфер обмена
   const shareEvent = async (ev: any) => {
-    const siteUrl = `https://ch.the-event-map.com`;
+    const siteUrl = `https://the-event-map.com`;
     const eventUrl = formatWebsite(ev.website) || window.location.href;
     const title = ev.title || 'Event';
     const description = getDescription(ev) || '';
