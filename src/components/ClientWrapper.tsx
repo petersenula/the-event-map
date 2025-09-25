@@ -14,19 +14,19 @@ export default function ClientWrapper({
   useSupabaseAuthListener();          // слушаем изменения сессии
 
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [showError, setShowError] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setTimeoutReached(true), 15000); // макс. 15 сек
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!ready && timeoutReached) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center">
-        Load has failed. Please reload the page.
-      </div>
-    );
-  }
+  {showError && (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-white text-black border px-4 py-3 rounded-xl shadow-md z-50 text-sm">
+      ⚠️ Authorization failed. <br />
+      <button
+        onClick={() => window.location.href = '/'}
+        className="mt-2 underline text-blue-600 hover:text-blue-800"
+      >
+        Click here to reload or sign in again
+      </button>
+    </div>
+  )}
 
   return (
     <>
