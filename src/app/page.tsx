@@ -45,6 +45,7 @@ import {
   idbMetaGet,
   idbMetaSet,
 } from '@/lib/idb';
+import { useEventFromUrl } from '../context/EventContext';
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -781,20 +782,15 @@ const syncEventsWithServer = useCallback(
   const [fbSending, setFbSending] = useState(false);
   const [fbError, setFbError] = useState<string|null>(null);
   const [fbSuccess, setFbSuccess] = useState(false);
+  const { eventIdFromUrl } = useEventFromUrl();
 
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const eventIdFromUrl = url.searchParams.get('event');
-
-    console.log('[URL CHECK] eventIdFromUrl =', eventIdFromUrl); // 🐞 лог 1
-
     if (!eventIdFromUrl) return;
 
     const showEvent = async () => {
-      console.log('[EVENT LINK] showEvent started'); // 🐞 лог 2
-
+      console.log('[EVENT LINK] showEvent started'); // 🐞 лог 1
       let found = events.find(ev => String(ev.id) === eventIdFromUrl);
-      console.log('[EVENT LINK] found in list:', found); // 🐞 лог 3
+      console.log('[EVENT LINK] found in list:', found); // 🐞 лог 2
 
       if (!found) {
         const { data, error } = await supabase
@@ -803,7 +799,7 @@ const syncEventsWithServer = useCallback(
           .eq('id', eventIdFromUrl)
           .maybeSingle();
 
-        console.log('[EVENT LINK] fetched from supabase:', { data, error }); // 🐞 лог 4
+        console.log('[EVENT LINK] fetched from supabase:', { data, error }); // 🐞 лог 3
 
         if (data) {
           const parsed = parseLatLng(data.lat, data.lng);
@@ -834,13 +830,14 @@ const syncEventsWithServer = useCallback(
 
         scrollToEvent(found.id);
 
+        const url = new URL(window.location.href);
         url.searchParams.delete('event');
         window.history.replaceState({}, '', url.pathname + url.search);
       }
     };
 
     const interval = setInterval(() => {
-      console.log('[EVENT LINK] checking events:', events.length); // 🐞 лог 5
+      console.log('[EVENT LINK] checking events:', events.length); // 🐞 лог 4
       if (events.length > 0) {
         clearInterval(interval);
         showEvent();
@@ -848,7 +845,7 @@ const syncEventsWithServer = useCallback(
     }, 300);
 
     return () => clearInterval(interval);
-  }, [events]);
+  }, [events, eventIdFromUrl]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;

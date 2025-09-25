@@ -3,6 +3,7 @@ import './globals.css';
 
 import I18nProvider from '../components/i18nProvider';
 import ClientWrapper from '../components/ClientWrapper'; // ⬅️ добавить импорт
+import { EventProvider } from '../context/EventContext';
 
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -36,9 +37,11 @@ export default function RootLayout({
       </head>
       <body>
         <I18nProvider>
-          <ClientWrapper>
-            {children}
-          </ClientWrapper>
+          <EventProvider> 
+            <ClientWrapper>
+              {children}
+            </ClientWrapper>
+          </EventProvider> 
         </I18nProvider>
       </body>
     </html>
