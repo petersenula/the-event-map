@@ -89,6 +89,17 @@
   "refreshing_events": "Ereignisse werden aktualisiert...",
   "home_saved": "Heimatstandort wurde gespeichert.",
 
+   
+  "info": {
+    "title": "Hinweise",
+    "intro": "Auf dieser Karte sammeln wir die interessantesten Veranstaltungen in der ganzen Schweiz.",
+    "translation": "Wir verwenden maschinelle Übersetzungen. Wenn etwas unklar ist, prüfen Sie bitte die Website des Veranstalters.",
+    "disclaimer": "Wir sind keine Veranstalter. Bitte prüfen Sie immer Datum, Uhrzeit und Adresse auf der Website des Veranstalters.",
+    "search": "Sie können mit Filtern suchen oder Schlüsselwörter eingeben, z. B. Chilbi, Halloween, Schokolade.",
+    "session": "Wenn die Sitzung nicht geladen wird, melden Sie sich ab, schließen Sie die App und öffnen Sie sie erneut.",
+    "restriction": "Daten dürfen nicht massenhaft oder kommerziell genutzt werden."
+  },
+
     "ui": {
     "showList": "Als Liste anzeigen",
     "hideList": "Liste ausblenden",

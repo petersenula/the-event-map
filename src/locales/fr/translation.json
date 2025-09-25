@@ -95,6 +95,16 @@
    "button": "Voir sous forme de liste"
 },
 
+"info":{
+  "title": "Astuces",
+  "intro": "Cette carte rassemble les événements les plus intéressants dans toute la Suisse.",
+  "translation": "Nous utilisons la traduction automatique. En cas de doute, vérifiez le site de l’organisateur.",
+  "disclaimer": "Nous ne sommes pas les organisateurs. Vérifiez toujours les dates, l’heure et l’adresse sur le site de l’organisateur.",
+  "search": "Vous pouvez rechercher avec des filtres ou entrer des mots-clés comme Chilbi, Halloween, chocolat.",
+  "session": "Si la session ne se charge pas, déconnectez-vous, fermez et rouvrez l’application.",
+  "restriction": "Les données ne peuvent pas être utilisées massivement ni à des fins commerciales."
+},
+
   "ui": {
     "showList": "Afficher en liste",
     "hideList": "Masquer la liste",

@@ -1,4 +1,4 @@
-import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, Copy } from 'lucide-react';
+import { RefreshCw, Search, User, Home, Info, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, Copy } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import Link from 'next/link';
 import { RefObject } from 'react';
@@ -113,6 +113,7 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
     const end: Date | null = dateRange[0]?.endDate ?? null;
     const lang = i18n.language;
     const [showProfile, setShowProfile] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
     // 👇 ДОБАВЬ внутри DesktopOverlay (рядом с const [showProfile, setShowProfile] = useState(false);)
     const openEventList = () => {
       setShowEventList(true);
@@ -176,6 +177,30 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
       <>
         {/* ЛЕВАЯ ПАНЕЛЬ */}
         <div className="fixed top-15 left-4 z-[60] w-[25vw] min-w-[300px] max-w-[420px]">
+          {/* ПОДСКАЗКИ */}
+        {showInfo && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowInfo(false)}
+            />
+            <div className="relative z-[3001] w-[95vw] max-w-md bg-white rounded-2xl shadow-xl p-6 border border-gray-300 space-y-4 text-sm text-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-semibold text-gray-800">{t('info.title')}</h2>
+                <button onClick={() => setShowInfo(false)}>
+                  <X className="w-6 h-6 text-gray-400 hover:text-gray-700" />
+                </button>
+              </div>
+
+              <p>{t('info.intro')}</p>
+              <p>{t('info.translation')}</p>
+              <p>{t('info.disclaimer')}</p>
+              <p>{t('info.search')}</p>
+              <p>{t('info.session')}</p>
+              <p>{t('info.restriction')}</p>
+            </div>
+          </div>
+        )}
             {showProfile && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowProfile(false)} />
@@ -442,8 +467,11 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
         </div>
 
         {/* ВЕРХНИЕ КНОПКИ */}
+        
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[96vw] md:w-[84vw] xl:w-[1200px]">
+        
           <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2">
+            
             <button
               onClick={() => (showEventList ? setShowEventList(false) : openEventList())}
               className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
@@ -466,6 +494,13 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
             <Link href="/privacy" className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs">
               {t('ui.privacy')}
             </Link>
+
+            <button
+              onClick={() => setShowInfo(true)}
+              className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
+            >
+              <Info className="w-5 h-5 text-gray-700" />
+            </button>
           </div>
         </div>
 

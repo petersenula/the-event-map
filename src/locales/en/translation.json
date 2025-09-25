@@ -83,6 +83,16 @@
     "phone_invalid": "Please enter the phone number in international format, e.g. +41791112233"
   },
 
+"info":{
+  "title": "Tips",
+  "intro": "This map collects the most interesting events across Switzerland.",
+  "translation": "We use machine translation. If something is unclear, please check the organizer’s website.",
+  "disclaimer": "We are not event organizers. Always verify the dates, time, and address on the organizer’s website.",
+  "search": "You can search using filters or enter keywords such as Chilbi, Halloween, chocolate.",
+  "session": "If your session does not load, log out, close, and reopen the app.",
+  "restriction": "Data may not be used in bulk or for commercial purposes."
+},
+
   "profile": {
   "please_login": "Authorization allows you to add events to favorites and save personal settings. Please log in or register.",
   "enter_address": "Please enter your address:"

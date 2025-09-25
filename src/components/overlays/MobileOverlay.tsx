@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Search, User, Home, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, ListNumbers,  Copy } from 'lucide-react';
+import { RefreshCw, Search, User, Home, Info, Filter, List, X, Heart, Share2, CalendarPlus, CalendarClock, CalendarDays, ListNumbers,  Copy } from 'lucide-react';
 import cn from 'classnames';
 import DatePicker from 'react-datepicker';
 import React, { Dispatch, useState, SetStateAction, useEffect, RefObject } from 'react';
@@ -119,6 +119,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
     const lang = i18n.language;
 
     const [showProfile, setShowProfile] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
 
     const hasActiveFilters = !!(
         filterType.length ||
@@ -255,6 +256,31 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                     )}
                 </div>
             </div>
+        )}
+
+          {/* ПОДСКАЗКИ */}
+        {showInfo && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowInfo(false)}
+            />
+            <div className="relative z-[3001] w-[95vw] max-w-md bg-white rounded-2xl shadow-xl p-6 border border-gray-300 space-y-4 text-sm text-gray-700">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="font-semibold text-gray-800">{t('info.title')}</h2>
+                <button onClick={() => setShowInfo(false)}>
+                  <X className="w-6 h-6 text-gray-400 hover:text-gray-700" />
+                </button>
+              </div>
+
+              <p>{t('info.intro')}</p>
+              <p>{t('info.translation')}</p>
+              <p>{t('info.disclaimer')}</p>
+              <p>{t('info.search')}</p>
+              <p>{t('info.session')}</p>
+              <p>{t('info.restriction')}</p>
+            </div>
+          </div>
         )}
 
         {/* ВЕРХНЯЯ ПАНЕЛЬ — язык + даты + кнопки */}
@@ -564,6 +590,21 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
             </div>
           </div>
         )}
+
+        {/* КНОПКА ИНФОРМАЦИИ */}
+        <div 
+          className="fixed left-2 mb-16 z-[100] md:hidden" 
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowInfo(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-300 shadow hover:bg-gray-100"
+            title={t('info.title')}
+          >
+            <Info className="w-5 h-5 text-gray-700" />
+          </button>
+        </div>
 
         <div className="fixed left-2 z-[100] md:hidden"
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}>

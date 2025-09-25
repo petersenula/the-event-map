@@ -89,6 +89,16 @@
   "other_method": "Usa un altro metodo"
 },
 
+"info":{
+  "title": "Suggerimenti",
+  "intro": "Su questa mappa raccogliamo gli eventi più interessanti in tutta la Svizzera.",
+  "translation": "Utilizziamo la traduzione automatica. Se qualcosa non è chiaro, controlla il sito dell’organizzatore.",
+  "disclaimer": "Non siamo gli organizzatori. Verifica sempre date, orari e indirizzo sul sito dell’organizzatore.",
+  "search": "Puoi cercare con i filtri o inserire parole chiave come Chilbi, Halloween, cioccolato.",
+  "session": "Se la sessione non si carica, esci, chiudi e riapri l’app.",
+  "restriction": "I dati non possono essere utilizzati in massa o per scopi commerciali."
+},
+
 "ui": {
   "showList": "Mostra come elenco",
   "hideList": "Nascondi elenco",
