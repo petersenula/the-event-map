@@ -233,19 +233,6 @@ export default function EventMap() {
     })();
   }, [session]);
 
-  const userInitials = useMemo(() => {
-    if (profile?.first_name && profile?.last_name) {
-      return (
-        profile.first_name[0].toUpperCase() +
-        profile.last_name[0].toUpperCase()
-      );
-    }
-    if (profile?.first_name) {
-      return profile.first_name[0].toUpperCase();
-    }
-    return 'U';
-  }, [profile]);
-
   const userDisplay = useMemo(() => {
     const u = session?.user;
     if (!u) return '';
@@ -290,18 +277,6 @@ export default function EventMap() {
 
   const [loadedCount, setLoadedCount] = useState<number>(0);
 
-  const fetchTotalCountForCurrentFilters = useCallback(async () => {
-    try {
-      const { count, error } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true });
-      if (error) throw error;
-      setTotalCount(count ?? 0);
-    } catch (e) {
-      console.error('fetchTotalCount failed:', e);
-    }
-  }, []);
-
   useEffect(() => {
     // Check&Apply update на холодном старте
     (async () => {
@@ -324,145 +299,144 @@ export default function EventMap() {
     })();
   }, []);
 
-const syncEventsWithServer = useCallback(
-  async (
-    reason: 'hourly' | 'login' | 'logout' | 'startup' | 'manual' = 'manual'
-  ) => {
-    const { data } = await supabase.auth.getSession();
-    if (!data?.session) {
-      console.warn(`[SYNC] Пропущен sync — нет сессии (${reason})`);
-      return;
-    }
-    try {
-      console.log('[SYNC] start, reason =', reason);
+  const syncEventsWithServer = useCallback(
+    async (
+      reason: 'hourly' | 'login' | 'logout' | 'startup' | 'manual' = 'manual'
+    ) => {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        console.warn(`[SYNC] Пропущен sync — нет сессии (${reason})`);
+        return;
+      }
+      try {
+        console.log('[SYNC] start, reason =', reason);
 
-      // ---------- 1) Тянем ВСЕ id постранично ----------
-      const pageSize = 1000;
-      const serverIds = new Set<string>();
-      let page = 0;
+        // ---------- 1) Тянем ВСЕ id постранично ----------
+        const pageSize = 1000;
+        const serverIds = new Set<string>();
+        let page = 0;
 
-      for (;;) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        console.log(`[SYNC-IDS] requesting page ${page}, range ${from}-${to}`);
+        for (;;) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          console.log(`[SYNC-IDS] requesting page ${page}, range ${from}-${to}`);
 
-        const { data, error } = await supabase
-          .from('events')
-          .select('id')
-          .order('id', { ascending: true })
-          .range(from, to);
+          const { data, error } = await supabase
+            .from('events')
+            .select('id')
+            .order('id', { ascending: true })
+            .range(from, to);
 
-        if (error) {
-          console.error('[SYNC-IDS] error:', error);
-          break;
+          if (error) {
+            console.error('[SYNC-IDS] error:', error);
+            break;
+          }
+
+          const rows = data ?? [];
+          for (const row of rows) serverIds.add(String(row.id));
+          console.log(
+            `[SYNC-IDS] got ${rows.length} ids on page ${page} (total collected: ${serverIds.size})`
+          );
+
+          if (rows.length < pageSize) {
+            console.log('[SYNC-IDS] reached last page');
+            break; // <= ВАЖНО: теперь break только при последней странице
+          }
+          page++;
         }
 
-        const rows = data ?? [];
-        for (const row of rows) serverIds.add(String(row.id));
+        // ---------- 2) Локальные id из IDB ----------
+        const localIds = await idbGetAllIds();
         console.log(
-          `[SYNC-IDS] got ${rows.length} ids on page ${page} (total collected: ${serverIds.size})`
+          `[SYNC] localIds=${localIds.size}, serverIds=${serverIds.size}`
         );
 
-        if (rows.length < pageSize) {
-          console.log('[SYNC-IDS] reached last page');
-          break; // <= ВАЖНО: теперь break только при последней странице
+        // ---------- 3) Разница ----------
+        const idsToAdd: string[] = [];
+        const idsToRemove: string[] = [];
+        for (const sid of serverIds) if (!localIds.has(sid)) idsToAdd.push(sid);
+        for (const lid of localIds) if (!serverIds.has(lid)) idsToRemove.push(lid);
+        console.log(`[SYNC] toAdd=${idsToAdd.length}, toRemove=${idsToRemove.length}`);
+
+        // ---------- 4) Тянем ПОЛНЫЕ данные постранично и пишем в IDB ----------
+        page = 0;
+        const toState: any[] = [];
+
+        for (;;) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          console.log(`[SYNC-FULL] requesting page ${page}, range ${from}-${to}`);
+
+          const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, to);
+
+          if (error) {
+            console.error('[SYNC-FULL] error:', error);
+            break;
+          }
+
+          const rows = data ?? [];
+          console.log(`[SYNC-FULL] got ${rows.length} rows on page ${page}`);
+          if (rows.length === 0) {
+            console.log('[SYNC-FULL] reached empty page, stopping');
+            break;
+          }
+
+          const batch = rows.map(normalizeEvent);
+
+          // -> в IDB
+          try {
+            await idbPutEvents(batch);
+          } catch (e) {
+            console.warn('[SYNC-FULL] idbPutEvents error:', e);
+          }
+
+          // -> в память (UI), без дублей
+          const fresh = batch.filter(
+            (ev) => !loadedEventIds.current.has(String(ev.id))
+          );
+          if (fresh.length) {
+            toState.push(...fresh);
+            for (const ev of fresh) loadedEventIds.current.add(String(ev.id));
+          }
+
+          if (rows.length < pageSize) {
+            console.log('[SYNC-FULL] last page reached');
+            break;
+          }
+          page++;
         }
-        page++;
+
+        if (toState.length) {
+          setEvents((prev) => [...prev, ...toState]);
+          setFilteredEvents((prev) => [...prev, ...toState]);
+        }
+
+        // ---------- 5) Удаляем лишние локальные ----------
+        if (idsToRemove.length) {
+          try {
+            await idbBulkDelete(idsToRemove);
+          } catch (e) {
+            console.warn('[SYNC] idbBulkDelete error:', e);
+          }
+          const removeSet = new Set(idsToRemove);
+          setEvents((prev) => prev.filter((p) => !removeSet.has(String(p.id))));
+          setFilteredEvents((prev) =>
+            prev.filter((p) => !removeSet.has(String(p.id)))
+          );
+          for (const id of idsToRemove) loadedEventIds.current.delete(String(id));
+        }
+
+        console.log('[SYNC] done');
+      } catch (e) {
+        console.error('[SYNC] failed:', e);
       }
-
-      // ---------- 2) Локальные id из IDB ----------
-      const localIds = await idbGetAllIds();
-      console.log(
-        `[SYNC] localIds=${localIds.size}, serverIds=${serverIds.size}`
-      );
-
-      // ---------- 3) Разница ----------
-      const idsToAdd: string[] = [];
-      const idsToRemove: string[] = [];
-      for (const sid of serverIds) if (!localIds.has(sid)) idsToAdd.push(sid);
-      for (const lid of localIds) if (!serverIds.has(lid)) idsToRemove.push(lid);
-      console.log(`[SYNC] toAdd=${idsToAdd.length}, toRemove=${idsToRemove.length}`);
-
-      // ---------- 4) Тянем ПОЛНЫЕ данные постранично и пишем в IDB ----------
-      page = 0;
-      const toState: any[] = [];
-
-      for (;;) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        console.log(`[SYNC-FULL] requesting page ${page}, range ${from}-${to}`);
-
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .order('id', { ascending: true })
-          .range(from, to);
-
-        if (error) {
-          console.error('[SYNC-FULL] error:', error);
-          break;
-        }
-
-        const rows = data ?? [];
-        console.log(`[SYNC-FULL] got ${rows.length} rows on page ${page}`);
-        if (rows.length === 0) {
-          console.log('[SYNC-FULL] reached empty page, stopping');
-          break;
-        }
-
-        const batch = rows.map(normalizeEvent);
-
-        // -> в IDB
-        try {
-          await idbPutEvents(batch);
-        } catch (e) {
-          console.warn('[SYNC-FULL] idbPutEvents error:', e);
-        }
-
-        // -> в память (UI), без дублей
-        const fresh = batch.filter(
-          (ev) => !loadedEventIds.current.has(String(ev.id))
-        );
-        if (fresh.length) {
-          toState.push(...fresh);
-          for (const ev of fresh) loadedEventIds.current.add(String(ev.id));
-        }
-
-        if (rows.length < pageSize) {
-          console.log('[SYNC-FULL] last page reached');
-          break;
-        }
-        page++;
-      }
-
-      if (toState.length) {
-        setEvents((prev) => [...prev, ...toState]);
-        setFilteredEvents((prev) => [...prev, ...toState]);
-      }
-
-      // ---------- 5) Удаляем лишние локальные ----------
-      if (idsToRemove.length) {
-        try {
-          await idbBulkDelete(idsToRemove);
-        } catch (e) {
-          console.warn('[SYNC] idbBulkDelete error:', e);
-        }
-        const removeSet = new Set(idsToRemove);
-        setEvents((prev) => prev.filter((p) => !removeSet.has(String(p.id))));
-        setFilteredEvents((prev) =>
-          prev.filter((p) => !removeSet.has(String(p.id)))
-        );
-        for (const id of idsToRemove) loadedEventIds.current.delete(String(id));
-      }
-
-      console.log('[SYNC] done');
-    } catch (e) {
-      console.error('[SYNC] failed:', e);
-    }
-  },
-  [setEvents, setFilteredEvents]
-);
-
+    },
+    [setEvents, setFilteredEvents]
+  );
 
   useEffect(() => {
     const init = async () => {
@@ -563,7 +537,6 @@ const syncEventsWithServer = useCallback(
     })();
   }, []);
 
-
   const fetchEventsInBounds = useCallback(
     async (maybeBounds?: google.maps.LatLngBounds | null) => {
       if (fetchingRef.current) return;
@@ -601,7 +574,108 @@ const syncEventsWithServer = useCallback(
     [ensureBounds, setEvents, setFilteredEvents]
   );
 
-  
+  const userId = session?.user?.id ?? null;
+
+  // чтобы не гонялось дважды из-за StrictMode
+  const didRunLoginRef = useRef(false);
+
+  useEffect(() => {
+    if (!userId) return;           // нет пользователя — этот эффект не выполняем
+    if (didRunLoginRef.current) {  // простая защита от дубля при StrictMode
+      didRunLoginRef.current = false; 
+    }
+    didRunLoginRef.current = true;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // 1) Избранное
+        try {
+          const favs = await loadFavoritesFromProfile(userId);
+          if (!cancelled) setFavorites(favs);
+        } catch (err) {
+          console.error('Ошибка загрузки избранного из профиля:', err);
+        }
+
+        // 2) Праймим локальный кэш, если пуст
+        const localIds = await idbGetAllIds();
+        if (!localIds || localIds.size === 0) {
+          const pageSize = 1000;
+          let page = 0;
+          const toState: any[] = [];
+
+          for (;;) {
+            const from = page * pageSize;
+            const to = from + pageSize - 1;
+
+            const { data, error } = await supabase
+              .from('events')
+              .select('*')
+              .order('id', { ascending: true })
+              .range(from, to);
+
+            if (error) {
+              console.error('[auth-load-all] supabase error:', error);
+              break;
+            }
+
+            const batch = (data ?? []).map(normalizeEvent);
+            if (!batch.length) break;
+
+            toState.push(...batch.filter(ev => !loadedEventIds.current.has(String(ev.id))));
+            try { await idbPutEvents(batch); } catch {}
+
+            if (batch.length < pageSize) break;
+            page++;
+          }
+
+          if (!cancelled && toState.length) {
+            setEvents(prev => [...prev, ...toState]);
+            setFilteredEvents(prev => [...prev, ...toState]);
+            toState.forEach(ev => loadedEventIds.current.add(String(ev.id)));
+          }
+        } else {
+          // 3) Синхронизация после логина
+          await syncEventsWithServer('login');
+        }
+      } finally {
+        // no-op
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [userId]); // ← реагируем именно на появление/смену userId
+
+  const prevUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prev = prevUserIdRef.current;
+    prevUserIdRef.current = userId;
+
+    // интересен переход "был пользователь → стал null"
+    if (prev && !userId) {
+      // Если у тебя есть флаг ручного выхода – можно учесть:
+      if (manualLogoutRef.current) {
+        manualLogoutRef.current = false;
+
+        setShowAuthPrompt(false);
+        setViewCount(0);
+        setFavorites([]);
+
+        // Данные в IndexedDB НЕ трогаем: карта остаётся с событиями
+        if (mapRef.current?.getBounds()) {
+          fetchEventsInBounds(mapRef.current.getBounds()!);
+        }
+      }
+
+      // Лёгкая синхронизация после выхода (если нужно)
+      (async () => {
+        try { await syncEventsWithServer('logout'); } catch {}
+      })();
+    }
+  }, [userId, fetchEventsInBounds]);
+
   const translateTypeUI = useCallback((type: string) => {
     const key = (typeTranslationKeys as Record<string, string>)[type];
     if (!key) return type;
@@ -665,6 +739,10 @@ const syncEventsWithServer = useCallback(
   const [loadError, setLoadError] = useState<string | null>(null);
   const mapStatus = !isLoaded ? 'loading' : (loadError ? 'error' : 'ready');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsAuthenticated(!!session?.user);
+  }, [session?.user]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -911,111 +989,7 @@ const syncEventsWithServer = useCallback(
   // 1. Слушаем изменения авторизации
   const [showWelcome, setShowWelcome] = useState(false);
   
-  useEffect(() => {
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        // Интересны только реальные изменения, INITIAL_SESSION можно игнорить
-        if (event === 'INITIAL_SESSION') return;
-
-        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-          const user =
-            newSession?.user ??
-            (await supabase.auth.getUser()).data.user ??
-            null;
-
-          setIsAuthenticated(!!user);
-          setSession(user ? { user } : null);
-
-          if (user) {
-            try {
-              const favs = await loadFavoritesFromProfile(user.id);
-              setFavorites(favs);
-            } catch (err) {
-              console.error('Ошибка загрузки избранного из профиля:', err);
-            }
-          }
-
-          // === ⬇️ если IndexedDB пуст — загружаем всё постранично, как в clearStorage
-          const localIds = await idbGetAllIds();
-          if (!localIds || localIds.size === 0) {
-            const pageSize = 1000;
-            let page = 0;
-            const toState: any[] = [];
-
-            for (;;) {
-              const from = page * pageSize;
-              const to = from + pageSize - 1;
-
-              const { data, error } = await supabase
-                .from('events')
-                .select('*')
-                .order('id', { ascending: true })
-                .range(from, to);
-
-              if (error) {
-                console.error('[auth-load-all] supabase error:', error);
-                break;
-              }
-
-              const batch = (data ?? []).map(normalizeEvent);
-              if (!batch.length) break;
-
-              toState.push(...batch.filter(ev => !loadedEventIds.current.has(String(ev.id))));
-              try { await idbPutEvents(batch); } catch {}
-
-              if (batch.length < pageSize) break;
-              page++;
-            }
-
-            if (toState.length) {
-              setEvents(prev => [...prev, ...toState]);
-              setFilteredEvents(prev => [...prev, ...toState]);
-              toState.forEach(ev => loadedEventIds.current.add(String(ev.id)));
-            }
-          } else {
-            await syncEventsWithServer('login');
-          }
-        }
-
-        if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
-          setSession(null);
-
-          // Если это был наш осознанный logout по кнопке:
-          if (manualLogoutRef.current) {
-            manualLogoutRef.current = false;
-
-            // Очищаем ТОЛЬКО volatile-состояния пользователя
-            setShowAuthPrompt(false);
-            setViewCount(0);
-            setFavorites([]); // ⚠️ это локальный список, IndexedDB с событиями не трогаем
-
-            // События НЕ сбрасываем (остаются на карте из IndexedDB)
-            // При желании можно разово "освежить" текущие границы из кэша:
-            if (mapRef.current?.getBounds()) {
-              fetchEventsInBounds(mapRef.current.getBounds()!);
-            }
-          } else {
-            // Тихая потеря сессии — НИЧЕГО не трогаем (карта остаётся),
-            // попробуем восстановить в фоне (см. раздел 5).
-          }
-        }
-        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-          // ...
-          await syncEventsWithServer('login');
-        }
-
-        if (event === 'SIGNED_OUT') {
-          // ...
-          await syncEventsWithServer('logout');
-        }
-      }
-    );
-
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
-  }, [fetchEventsInBounds]);
+  
 
   // 5.1 Периодический refresh токена каждые 5 минут
   useEffect(() => {
@@ -1923,8 +1897,6 @@ const syncEventsWithServer = useCallback(
           userDisplay={userDisplay}
           loadedCount={events.length}
           totalCount={totalCount}
-          userDisplay={userDisplay}
-          userInitials={userInitials}
           isAuthenticated={!!session?.user}
         />
       ) : (
@@ -1978,8 +1950,6 @@ const syncEventsWithServer = useCallback(
           userDisplay={userDisplay}
           loadedCount={events.length}
           totalCount={totalCount}
-          userDisplay={userDisplay}
-          userInitials={userInitials}
           isAuthenticated={!!session?.user}
         />
       )}

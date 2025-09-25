@@ -56,7 +56,6 @@ interface MobileOverlayProps {
   userDisplay: string;
   loadedCount: number;
   totalCount: number | null;
-  userInitials: string;
 }
 
 const MobileOverlay: React.FC<MobileOverlayProps> = ({
@@ -110,7 +109,6 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
   setShowFavoritesList,
   loadedCount,
   totalCount,
-  userInitials,
 }) => {
 
     const pill =
@@ -269,11 +267,9 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 title="Profile"
               >
               {!isAuthenticated ? (
-                <User className="w-4 h-4 mr-1" />
+                <User className="w-7 h-7 text-gray-700" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-800">
-                  {userInitials}
-                </div>
+                <User className="w-7 h-7 text-green-600" />
               )}
               </button>
               <span>

@@ -54,7 +54,6 @@ interface DesktopOverlayProps {
   showAuthPrompt: boolean;
   loadedCount: number;
   totalCount: number | null;
-  userInitials: string;
 }
 
 const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
@@ -107,7 +106,6 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
   showAuthPrompt, 
   loadedCount,
   totalCount,
-  userInitials,
 }) => {
 
     // безопасные значения для пикеров
@@ -252,12 +250,10 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                     className="inline-flex items-center bg-white text-black rounded-full px-4 py-2 shadow border hover:bg-gray-50 active:scale-[.98] whitespace-nowrap text-xs"
                   >
                   {!isAuthenticated ? (
-                      <User className="w-4 h-4 mr-1" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-800">
-                        {userInitials}
-                      </div>
-                    )}
+                    <User className="w-7 h-7 text-gray-700" />
+                  ) : (
+                    <User className="w-7 h-7 text-green-600" />
+                  )}
                   </button>
                   <span>
                   <span className="ml-2 text-[11px] font-medium text-gray-500">
