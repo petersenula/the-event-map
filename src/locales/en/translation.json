@@ -103,7 +103,8 @@
     "login": "Login",
     "favorites": "Favorites",
     "setHome": "Set Home Location",
-    "noFavorites": "You have no favorites yet"
+    "noFavorites": "You have no favorites yet",
+    "eventsHere": "{{count}} events here"
   },
   
   "feedback": {

@@ -102,7 +102,8 @@
   "logout": "Esci",
   "favorites": "Preferiti",
   "setHome": "Imposta l'indirizzo di casa",
-  "noFavorites": "Non hai ancora preferiti"
+  "noFavorites": "Non hai ancora preferiti",
+  "eventsHere": "{{count}} eventi qui"
   },
 
   "feedback": {

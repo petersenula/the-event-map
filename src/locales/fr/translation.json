@@ -108,7 +108,8 @@
     "logout": "Se déconnecter",
     "favorites": "Favoris",
     "setHome": "Définir l'adresse de domicile",
-    "noFavorites": "Vous n'avez pas encore de favoris"
+    "noFavorites": "Vous n'avez pas encore de favoris",
+    "eventsHere": "{{count}} événements ici"
   },
 
   "feedback": {

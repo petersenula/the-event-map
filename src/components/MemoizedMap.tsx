@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import {
-  Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon
+  Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon, ChevronLeft
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,10 +27,12 @@ interface Props {
     start_date?: string;
     end_date?: string;
     website?: string;
+    start_time?: string | null;
+    end_time?: string | null;
     [key: string]: any;
   }[];
   selectedId: string | null;
-  onMarkerClick: (event: any) => void;
+  onMarkerClick: (event: any) => void;               // вызывает логику счётчика просмотров и т.п.
   onFavorite: (id: string | number) => void;
   onCloseInfo: () => void;
   getMarkerIcon: (types?: string[]) => string;
@@ -42,7 +44,7 @@ interface Props {
   makeGoogleCalendarUrl: (ev: any) => string;
   shareEvent: (ev: any) => void;
 
-  /** ← НОВОЕ: координаты домашнего местоположения (если есть) */
+  /** координаты домашнего местоположения (если есть) */
   homeLocation?: { lat: number; lng: number } | null;
 }
 
@@ -69,20 +71,21 @@ const MemoizedMap: React.FC<Props> = ({
   downloadICS,
   makeGoogleCalendarUrl,
   shareEvent,
-  homeLocation, // ← НОВОЕ
+  homeLocation,
 }) => {
+
+  // ===== ВЫБРАННОЕ одиночное событие (как раньше) =====
   const selected = selectedId
     ? events.find((ev) => String(ev.id) === selectedId)
     : null;
-
   const isSelectedFav = selected ? favorites.includes(String(selected.id)) : false;
 
-  // ===== SVG-иконка ДОМ =====
+  const { i18n, t } = useTranslation();
+
+  // ===== SVG-иконка ДОМ (для home маркера) =====
   const makeHomeIcon = (size = 30) => {
     const s = size;
-    const strokeColor = '#6B7280'; // светло-серый (tailwind gray-500)
-    const fillColor = '#E5E7EB'; // tailwind gray-200
-
+    const strokeColor = '#6B7280'; // gray-500
     const svg = `
       <svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="11" fill="white" stroke="${strokeColor}" stroke-width="1.5" />
@@ -90,11 +93,10 @@ const MemoizedMap: React.FC<Props> = ({
               fill="${strokeColor}" stroke="white" stroke-width="1" stroke-linejoin="round"/>
       </svg>
     `;
-
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   };
 
-  // ====== 1) Группируем события по координатам ======
+  // ===== 1) Группируем события по точным координатам =====
   type Group = {
     key: string;
     center: { lat: number; lng: number };
@@ -119,85 +121,36 @@ const MemoizedMap: React.FC<Props> = ({
     return Array.from(map.values());
   }, [events]);
 
-  // SVG-иконка кольца (подсветка под маркером)
-  const makeRingIcon = (diameter = 44, color = '#60A5FA') => {
-    const radius = diameter / 2 - 2;
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${diameter}" height="${diameter}" viewBox="0 0 ${diameter} ${diameter}">
-        <defs>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
-            <feOffset in="blur" dx="0" dy="0" result="offset"/>
-            <feMerge>
-              <feMergeNode in="offset"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
-        <circle cx="${diameter/2}" cy="${diameter/2}" r="${radius}"
-                fill="rgba(96,165,250,0.16)" stroke="${color}" stroke-width="2"
-                filter="url(#shadow)"/>
-      </svg>
-    `;
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-  };
+  // ===== 2) Состояние ОТКРЫТОЙ ГРУППЫ и АКТИВНОГО события в группе =====
+  const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
+  const [groupActiveId, setGroupActiveId] = useState<string | number | null>(null);
 
-  // ====== 2) «Развернутая» группа (паучок) ======
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
-
-  // Переводим радиус в пикселях в смещение широты/долготы на текущем зуме
-  const circlePositions = useCallback(
-    (group: Group): { lat: number; lng: number }[] => {
-      const n = group.size;
-      if (n <= 1) return [group.center];
-
-      const zoom = mapRef.current?.getZoom() ?? 14;
-      const { lat, lng } = group.center;
-
-      const rPx = Math.min(60, 26 + n * 4);
-
-      const EARTH_RADIUS = 6378137; // м
-      const metersPerPixel =
-        (Math.cos((lat * Math.PI) / 180) * 2 * Math.PI * EARTH_RADIUS) /
-        (256 * Math.pow(2, zoom));
-
-      const rMeters = rPx * metersPerPixel;
-
-      const metersPerDegLat = 111320;
-      const metersPerDegLng = 111320 * Math.cos((lat * Math.PI) / 180);
-
-      const dLat = rMeters / metersPerDegLat;
-      const dLng = rMeters / metersPerDegLng;
-
-      const arr: { lat: number; lng: number }[] = [];
-      for (let i = 0; i < n; i++) {
-        const t = (2 * Math.PI * i) / n;
-        arr.push({
-          lat: lat + dLat * Math.sin(t),
-          lng: lng + dLng * Math.cos(t),
-        });
-      }
-      return arr;
-    },
-    [mapRef]
+  const openGroup = useMemo(
+    () => (openGroupKey ? groups.find((g) => g.key === openGroupKey) ?? null : null),
+    [groups, openGroupKey]
   );
 
-  // Обертки для схлопывания «паука»
+  // Закрытие группы (и её внутреннего экрана)
+  const closeGroup = useCallback(() => {
+    setOpenGroupKey(null);
+    setGroupActiveId(null);
+  }, []);
+
+  // Служебное: клик по карте и завершение перетаскивания закрывают список/детали группы
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
-      setExpandedKey(null);
+      closeGroup();
       onClick(e);
     },
-    [onClick]
+    [onClick, closeGroup]
   );
 
   const handleDragEnd = useCallback(() => {
-    setExpandedKey(null);
+    closeGroup();
     onDragEnd();
-  }, [onDragEnd]);
+  }, [onDragEnd, closeGroup]);
 
-  const { i18n } = useTranslation();
-
+  // ====== РЕНДЕР ======
   return (
     <GoogleMap
       mapContainerStyle={mapContainerStyle}
@@ -206,7 +159,9 @@ const MemoizedMap: React.FC<Props> = ({
         mapRef.current = map;
         setMapReady(true);
         onLoad(map);
-        map.addListener('zoom_changed', () => setExpandedKey(null));
+        map.addListener('zoom_changed', () => {
+          // при смене зума не трогаем список — пусть остаётся открыт
+        });
       }}
       onUnmount={(map) => {
         onUnmount(map);
@@ -215,19 +170,18 @@ const MemoizedMap: React.FC<Props> = ({
       onClick={handleMapClick}
       onDragEnd={handleDragEnd}
     >
-      {/* ===== НОВОЕ: маркер домашнего местоположения ===== */}
+      {/* Домашний маркер */}
       {homeLocation && (() => {
         const g = typeof window !== 'undefined' ? (window as any).google : undefined;
-        console.log('🏠 Rendering home marker at', homeLocation, 'google =', !!g);
         const size = 30;
         return (
           <Marker
-            key="home-marker"// 👈 ключ, чтобы не кешировался
+            key="home-marker"
             position={homeLocation}
             zIndex={2000}
             clickable={false}
             icon={{
-              url: makeHomeIcon(size, '#111827'),                 // домик (тёмно-серый)
+              url: makeHomeIcon(size),
               scaledSize: g ? new g.maps.Size(size, size) : undefined,
               anchor: g ? new g.maps.Point(size / 2, size - 2) : undefined
             }}
@@ -236,47 +190,13 @@ const MemoizedMap: React.FC<Props> = ({
         );
       })()}
 
-      {/* ====== 3) Рисуем либо «свернутую» группу, либо «разлёт» ====== */}
-      {groups.flatMap((group) => {
-        if (expandedKey === group.key && group.size > 1) {
-          return circlePositions(group).map((pos, i) => {
-            const g = (typeof window !== 'undefined' ? (window as any).google : undefined);
-            const d = 44;
-            const ev = group.items[i];
-
-            return (
-              <React.Fragment key={`exp-wrap-${group.key}-${i}`}>
-                {g && (
-                  <Marker
-                    key={`ring-${group.key}-${i}`}
-                    position={pos}
-                    clickable={false}
-                    zIndex={999}
-                    icon={{
-                      url: makeRingIcon(d, '#e6e2bbff'),
-                      scaledSize: new g.maps.Size(d, d),
-                      anchor: new g.maps.Point(d / 2, d / 2),
-                    }}
-                  />
-                )}
-
-                <Marker
-                  key={`marker-${group.key}-${i}`}
-                  position={pos}
-                  icon={getMarkerIcon(ev.type ?? ['other'])}
-                  zIndex={1000}
-                  animation={g?.maps?.Animation?.DROP}
-                  onClick={() => onMarkerClick(ev)}
-                  onDblClick={() => onFavorite(ev.id)}
-                />
-              </React.Fragment>
-            );
-          });
-        }
-
+      {/* Маркеры: одиночные и групповые */}
+      {groups.map((group) => {
         const ev0 = group.items[0];
+        const isGroup = group.size > 1;
+
         const label =
-          group.size > 1
+          isGroup
             ? {
                 text: String(group.size),
                 color: 'white',
@@ -291,16 +211,193 @@ const MemoizedMap: React.FC<Props> = ({
             position={group.center}
             icon={getMarkerIcon(ev0.type ?? ['other'])}
             label={label}
-            onClick={() =>
-              group.size > 1 ? setExpandedKey(group.key) : onMarkerClick(ev0)
-            }
+            onClick={() => {
+              if (isGroup) {
+                // Открываем список событий в этой точке
+                setOpenGroupKey(group.key);
+                setGroupActiveId(null);
+              } else {
+                onMarkerClick(ev0);
+              }
+            }}
             onDblClick={() => onFavorite(ev0.id)}
           />
         );
       })}
 
-      {/* ====== 4) InfoWindow — как было ====== */}
-      {selected && (
+      {/* ====== InfoWindow ДЛЯ ГРУППЫ ====== */}
+      {openGroup && (
+        <InfoWindow
+          position={openGroup.center}
+          onCloseClick={() => {
+            closeGroup();
+            onCloseInfo();             // чтобы сбросить selectedId наверху
+          }}
+          options={{ disableAutoPan: true }}
+        >
+          {/* Контейнер окна */}
+          <div style={{ width: 280, maxHeight: '40vh', overflowY: 'auto' }} className="text-sm text-black">
+            {/* 1) СПИСОК СОБЫТИЙ */}
+            {!groupActiveId && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold">
+                  {t('ui.eventsHere', { count: openGroup.size })}
+                </h3>
+                </div>
+                <div className="divide-y divide-gray-200">
+                  {openGroup.items.map((ev: any) => {
+                    const isFav = favorites.includes(String(ev.id));
+                    return (
+                      <button
+                        key={ev.id}
+                        className="w-full text-left py-2 hover:bg-gray-50"
+                        onClick={() => {
+                          // вызывем onMarkerClick ради счётчика/логики,
+                          // но показываем детали ВНУТРИ этого окна
+                          onMarkerClick(ev);
+                          setGroupActiveId(String(ev.id));
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-800 text-white text-xs">
+                              {openGroup.items.indexOf(ev) + 1}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                          <div className="font-semibold truncate">{ev.title}</div>
+                          {/* Дата + время */}
+                          {(ev.start_date || ev.end_date) && (
+                            <div className="text-xs text-gray-600">
+                              {ev.start_date === ev.end_date
+                                ? formatDate(ev.start_date)
+                                : `${formatDate(ev.start_date)} - ${formatDate(ev.end_date)}`}
+                              {ev.start_time && (
+                                <> • {ev.start_time.slice(0,5)}</>
+                              )}
+                            </div>
+                          )}
+                          {/* Адрес */}
+                          {ev.address && (
+                            <div className="text-xs text-gray-500 truncate">{ev.address}</div>
+                          )}
+
+                          </div>
+                          <div className="ml-auto">
+                            <Heart
+                              className={`w-4 h-4 ${isFav ? 'text-pink-600' : 'text-gray-400'}`}
+                              fill={isFav ? 'currentColor' : 'none'}
+                            />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2) ДЕТАЛИ ОДНОГО СОБЫТИЯ ИЗ СПИСКА */}
+            {groupActiveId && (() => {
+              const ev = openGroup.items.find((x) => String(x.id) === String(groupActiveId));
+              if (!ev) return null;
+
+              const isFav = favorites.includes(String(ev.id));
+
+              return (
+                <div>
+                  <button
+                    onClick={() => setGroupActiveId(null)}
+                    className="mb-2 inline-flex items-center gap-1 text-gray-700 hover:text-black"
+                    title="Back to list"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </button>
+
+                  {(ev.start_date || ev.end_date) && (
+                    <p className="font-bold mb-1 flex items-center gap-1">
+                      <Calendar className="w-4 h-4 text-gray-600" />
+                      {ev.start_date === ev.end_date
+                        ? formatDate(ev.start_date)
+                        : `${formatDate(ev.start_date)} - ${formatDate(ev.end_date)}`}
+                    </p>
+                  )}
+
+                  <p className="mb-1 flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-gray-600" />
+                    <span className="flex-1">{ev.address}</span>
+                    <button
+                      onClick={async () => {
+                        try { await navigator.clipboard.writeText(ev.address ?? ''); } catch {}
+                      }}
+                      className="p-1 hover:bg-gray-200 rounded"
+                      title="Copy address"
+                    >
+                      <Copy className="w-4 h-4 text-gray-500" />
+                    </button>
+                  </p>
+
+                  <h2 className="font-bold mb-1">{ev.title}</h2>
+                  <p className="mb-1">{getDescription(ev)}</p>
+
+                  {ev.website && (
+                    <a
+                      href={formatWebsite(ev.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline break-words flex items-center gap-1"
+                    >
+                      <LinkIcon className="w-4 h-4 text-blue-600" />
+                      {formatWebsite(ev.website)}
+                    </a>
+                  )}
+
+                  <div className="mt-3 flex gap-2 justify-start">
+                    <button
+                      onClick={() => onFavorite(ev.id)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${isFav ? 'text-pink-600' : 'text-gray-600'}`}
+                        fill={isFav ? 'currentColor' : 'none'}
+                      />
+                    </button>
+                    <button
+                      onClick={() => shareEvent(ev)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Share"
+                    >
+                      <Share2 className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => downloadICS(makeICS(ev), 'event.ics')}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Add to Calendar"
+                    >
+                      <CalendarPlus className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <a
+                      href={makeGoogleCalendarUrl(ev)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Google Calendar"
+                    >
+                      <CalendarDays className="w-5 h-5 text-gray-600" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </InfoWindow>
+      )}
+
+      {/* ====== Обычное InfoWindow для одиночного события (показываем только когда НЕТ открытой группы) ====== */}
+      {!openGroup && selected && (
         <InfoWindow
           key={i18n.language}
           position={{ lat: Number(selected.lat), lng: Number(selected.lng) }}
@@ -326,7 +423,7 @@ const MemoizedMap: React.FC<Props> = ({
                 onClick={async () => {
                   try { await navigator.clipboard.writeText(selected.address ?? ''); } catch {}
                 }}
-                className="p-1 hover:bg-gray-200 rounded"
+                className="p-1 hover:bg-gray-100 rounded"
                 title="Copy address"
               >
                 <Copy className="w-4 h-4 text-gray-500" />
@@ -401,7 +498,7 @@ function areEqual(prev: Props, next: Props) {
     prev.selectedId === next.selectedId &&
     prev.events === next.events &&
     prev.favorites === next.favorites &&
-    sameHome // ← учитываем изменения домашней точки
+    sameHome
   );
 }
 

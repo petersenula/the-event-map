@@ -102,6 +102,7 @@
     "logout": "Abmelden",
     "setHome": "Heimatadresse festlegen",
     "favorites": "Favoriten",
+    "eventsHere": "{{count}} Veranstaltungen hier",
     "noFavorites": "Sie haben noch keine Favoriten"
   },
 
