@@ -45,7 +45,6 @@ import {
   idbMetaGet,
   idbMetaSet,
 } from '@/lib/idb';
-import { useEventFromUrl } from '../context/EventContext';
 
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
@@ -200,7 +199,7 @@ export default function EventMap() {
     ]);
 
     for (const key of Object.keys(localStorage)) {
-      if (key.startsWith('sb-') && key.startsWith('supabase.')) continue; // ⚠️ НЕ трогаем supabase-сессию
+      if (key.startsWith('sb-') && !key.startsWith('supabase.')) continue; // ⚠️ НЕ трогаем supabase-сессию
       if (!keep.has(key)) localStorage.removeItem(key);
     }
   }, []);
@@ -782,15 +781,20 @@ const syncEventsWithServer = useCallback(
   const [fbSending, setFbSending] = useState(false);
   const [fbError, setFbError] = useState<string|null>(null);
   const [fbSuccess, setFbSuccess] = useState(false);
-  const { eventIdFromUrl } = useEventFromUrl();
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    const eventIdFromUrl = url.searchParams.get('event');
+
+    console.log('[URL CHECK] eventIdFromUrl =', eventIdFromUrl); // 🐞 лог 1
+
     if (!eventIdFromUrl) return;
 
     const showEvent = async () => {
-      console.log('[EVENT LINK] showEvent started'); // 🐞 лог 1
+      console.log('[EVENT LINK] showEvent started'); // 🐞 лог 2
+
       let found = events.find(ev => String(ev.id) === eventIdFromUrl);
-      console.log('[EVENT LINK] found in list:', found); // 🐞 лог 2
+      console.log('[EVENT LINK] found in list:', found); // 🐞 лог 3
 
       if (!found) {
         const { data, error } = await supabase
@@ -799,7 +803,7 @@ const syncEventsWithServer = useCallback(
           .eq('id', eventIdFromUrl)
           .maybeSingle();
 
-        console.log('[EVENT LINK] fetched from supabase:', { data, error }); // 🐞 лог 3
+        console.log('[EVENT LINK] fetched from supabase:', { data, error }); // 🐞 лог 4
 
         if (data) {
           const parsed = parseLatLng(data.lat, data.lng);
@@ -830,14 +834,13 @@ const syncEventsWithServer = useCallback(
 
         scrollToEvent(found.id);
 
-        const url = new URL(window.location.href);
         url.searchParams.delete('event');
         window.history.replaceState({}, '', url.pathname + url.search);
       }
     };
 
     const interval = setInterval(() => {
-      console.log('[EVENT LINK] checking events:', events.length); // 🐞 лог 4
+      console.log('[EVENT LINK] checking events:', events.length); // 🐞 лог 5
       if (events.length > 0) {
         clearInterval(interval);
         showEvent();
@@ -845,7 +848,7 @@ const syncEventsWithServer = useCallback(
     }, 300);
 
     return () => clearInterval(interval);
-  }, [events, eventIdFromUrl]);
+  }, [events]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
@@ -1615,7 +1618,7 @@ const syncEventsWithServer = useCallback(
 
   // Web Share API + фолбэк в буфер обмена
   const shareEvent = async (ev: any) => {
-    const siteUrl = `https://ch.the-event-map.com?event=${ev.id}`;
+    const siteUrl = `https://ch.the-event-map.com`;
     const eventUrl = formatWebsite(ev.website) || window.location.href;
     const title = ev.title || 'Event';
     const description = getDescription(ev) || '';

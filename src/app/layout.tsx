@@ -3,7 +3,6 @@ import './globals.css';
 
 import I18nProvider from '../components/i18nProvider';
 import ClientWrapper from '../components/ClientWrapper'; // ⬅️ добавить импорт
-import { EventProvider } from '../context/EventContext';
 
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -36,12 +35,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body>
-        <I18nProvider>
-          <EventProvider> 
+        <I18nProvider>         
             <ClientWrapper>
               {children}
-            </ClientWrapper>
-          </EventProvider> 
+            </ClientWrapper>       
         </I18nProvider>
       </body>
     </html>
