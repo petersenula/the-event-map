@@ -2,6 +2,7 @@
 
 import { useSessionReady } from '../hooks/useSessionReady';
 import { useSupabaseAuthListener } from '../hooks/useSupabaseAuthListener';
+import { useSessionRefresh } from '../hooks/useSessionRefresh';
 import InstallPrompt from './InstallPrompt';
 import { useEffect, useState } from 'react';
 
@@ -12,6 +13,7 @@ export default function ClientWrapper({
 }) {
   const ready = useSessionReady();    // проверка сессии при старте
   useSupabaseAuthListener();          // слушаем изменения сессии
+  useSessionRefresh();
 
   const [timeoutReached, setTimeoutReached] = useState(false);
   const [showError, setShowError] = useState(false);

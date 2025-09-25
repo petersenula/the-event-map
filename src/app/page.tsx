@@ -214,7 +214,37 @@ export default function EventMap() {
     loadedEventIds.current.clear();
   };
 
+  const [profile, setProfile] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    if (!session?.user) return;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!error && data) {
+        setProfile(data);
+      }
+    })();
+  }, [session]);
+
+  const userInitials = useMemo(() => {
+    if (profile?.first_name && profile?.last_name) {
+      return (
+        profile.first_name[0].toUpperCase() +
+        profile.last_name[0].toUpperCase()
+      );
+    }
+    if (profile?.first_name) {
+      return profile.first_name[0].toUpperCase();
+    }
+    return 'U';
+  }, [profile]);
 
   const userDisplay = useMemo(() => {
     const u = session?.user;
@@ -1893,6 +1923,9 @@ const syncEventsWithServer = useCallback(
           userDisplay={userDisplay}
           loadedCount={events.length}
           totalCount={totalCount}
+          userDisplay={userDisplay}
+          userInitials={userInitials}
+          isAuthenticated={!!session?.user}
         />
       ) : (
         <DesktopOverlay 
@@ -1945,6 +1978,9 @@ const syncEventsWithServer = useCallback(
           userDisplay={userDisplay}
           loadedCount={events.length}
           totalCount={totalCount}
+          userDisplay={userDisplay}
+          userInitials={userInitials}
+          isAuthenticated={!!session?.user}
         />
       )}
       {showFavoritesList && (

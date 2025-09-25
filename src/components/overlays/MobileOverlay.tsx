@@ -56,6 +56,7 @@ interface MobileOverlayProps {
   userDisplay: string;
   loadedCount: number;
   totalCount: number | null;
+  userInitials: string;
 }
 
 const MobileOverlay: React.FC<MobileOverlayProps> = ({
@@ -109,6 +110,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
   setShowFavoritesList,
   loadedCount,
   totalCount,
+  userInitials,
 }) => {
 
     const pill =
@@ -198,8 +200,8 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 {/* окно */}
                 <div className="relative z-[3001] w-[95vw] max-w-md bg-white rounded-2xl shadow-xl p-6 border border-gray-300">
                   <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <User className="text-gray-700 w-6 h-6" />
+                    <div className="flex items-center gap-2 min-w-0">                     
+                      <User className="w-4 h-4 mr-1" />      
                       <span className="font-semibold text-gray-800 text-sm truncate max-w-[60vw]">
                         {userDisplay || t('ui.profile')}
                       </span>
@@ -266,7 +268,13 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 className="p-1 rounded-full hover:bg-gray-200"
                 title="Profile"
               >
-                <User className="w-5 h-5 text-gray-700" />
+              {!isAuthenticated ? (
+                <User className="w-4 h-4 mr-1" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-800">
+                  {userInitials}
+                </div>
+              )}
               </button>
               <span>
               <span className="ml-2 text-[11px] font-medium text-gray-500">
