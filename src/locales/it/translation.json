@@ -84,9 +84,9 @@
   "loading": "Attendere...",
   "home_saved": "La posizione di casa è stata salvata.",
   "unexpected_error": "Errore imprevisto",
-  "code_error": "Errore nella verifica del codice",
-  "login_error": "Errore di accesso"
-
+  "phone_invalid": "Inserisci il numero di telefono in formato internazionale, ad es. +41791112233",
+  "send_code": "Invia codice",
+  "other_method": "Usa un altro metodo"
 },
 
 "ui": {

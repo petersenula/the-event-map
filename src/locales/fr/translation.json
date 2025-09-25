@@ -86,9 +86,9 @@
   "loading": "Veuillez patienter...",
   "home_saved": "Le lieu de résidence a été enregistré.",
   "unexpected_error": "Erreur inattendue",
-  "code_error": "Erreur lors de la vérification du code",
-  "login_error": "Erreur de connexion"
-
+  "phone_invalid": "Veuillez entrer le numéro de téléphone au format international, par ex. +41791112233",
+  "send_code": "Envoyer le code",
+  "other_method": "Utiliser une autre méthode"
 },
 
   "list": {

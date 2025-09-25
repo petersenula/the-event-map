@@ -775,12 +775,6 @@ const syncEventsWithServer = useCallback(
 
   // feedback modal
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [fbName, setFbName] = useState('');
-  const [fbEmail, setFbEmail] = useState('');
-  const [fbMessage, setFbMessage] = useState('');
-  const [fbSending, setFbSending] = useState(false);
-  const [fbError, setFbError] = useState<string|null>(null);
-  const [fbSuccess, setFbSuccess] = useState(false);
 
   useEffect(() => {
     const url = new URL(window.location.href);

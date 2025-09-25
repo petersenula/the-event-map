@@ -79,8 +79,8 @@
     "loading": "Please wait...",
     "home_saved": "Home location has been saved.",
     "unexpected_error": "Unexpected error",
-    "code_error": "Error verifying the code",
-    "login_error": "Login error"
+    "send_code": "Send code",
+    "phone_invalid": "Please enter the phone number in international format, e.g. +41791112233"
   },
 
   "profile": {

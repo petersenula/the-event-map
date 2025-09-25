@@ -73,14 +73,14 @@
     "login_error": "Fehler beim Login",
     "phone_required": "Bitte gib deine Telefonnummer ein",
     "phone_placeholder": "Gib deine Telefonnummer ein, z.B. +41791112233",
+    "phone_invalid": "Bitte gib die Telefonnummer im internationalen Format ein, z. B. +41791112233",
     "code_sent_to": "Code gesendet an",
     "change_phone": "Nummer ändern",
     "loading": "Bitte warten...",
     "home_saved": "Heimatstandort wurde gespeichert.",
     "unexpected_error": "Unerwarteter Fehler",
-    "code_error": "Fehler bei der Code-Überprüfung",
-    "login_error": "Anmeldefehler"
-
+    "send_code": "Code senden",
+    "other_method": "Andere Methode verwenden"
   },
 
   "Select Dates": "Daten auswählen",
