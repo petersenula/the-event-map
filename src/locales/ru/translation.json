@@ -123,7 +123,8 @@
   "setHome": "Выбрать домашний адрес",
   "favorites": "Избранное",
   "noFavorites": "У вас пока нет избранных событий",
-  "eventsHere": "{{count}} событий здесь"
+  "eventsHere": "{{count}} событий здесь",
+  "eventsAtAddress": "По этому адресу {{count}} событий"
 },
 
 "feedback": {

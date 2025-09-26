@@ -406,14 +406,25 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               </div>
             )}
             <div className="flex items-center gap-2 w-full max-w-[300px] bg-white border border-gray-300 rounded-md shadow-sm px-2 py-1">
-            <Search className="w-5 h-3 text-gray-500 text-xs flex-shrink-0" />
-            <input
+              <Search className="w-5 h-5 text-gray-500 flex-shrink-0" />
+
+              <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
-            />
+              />
+
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                  title="Очистить"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -115,7 +115,8 @@
     "setHome": "Heimatadresse festlegen",
     "favorites": "Favoriten",
     "eventsHere": "{{count}} Veranstaltungen hier",
-    "noFavorites": "Sie haben noch keine Favoriten"
+    "noFavorites": "Sie haben noch keine Favoriten",
+    "eventsAtAddress": "{{count}} Veranstaltungen an dieser Adresse"
   },
 
   "feedback": {

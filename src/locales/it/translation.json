@@ -115,7 +115,9 @@
   "favorites": "Preferiti",
   "setHome": "Imposta l'indirizzo di casa",
   "noFavorites": "Non hai ancora preferiti",
-  "eventsHere": "{{count}} eventi qui"
+  "eventsHere": "{{count}} eventi qui",
+  "eventsAtAddress": "{{count}} eventi a questo indirizzo"
+
   },
 
   "feedback": {

@@ -116,7 +116,9 @@
     "favorites": "Favorites",
     "setHome": "Set Home Location",
     "noFavorites": "You have no favorites yet",
-    "eventsHere": "{{count}} events here"
+    "eventsHere": "{{count}} events here",
+    "eventsAtAddress": "{{count}} events at this address"
+
   },
   
   "feedback": {

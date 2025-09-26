@@ -231,59 +231,65 @@ const MemoizedMap: React.FC<Props> = ({
           position={openGroup.center}
           onCloseClick={() => {
             closeGroup();
-            onCloseInfo();             // чтобы сбросить selectedId наверху
+            onCloseInfo(); // сбрасываем selectedId
           }}
           options={{ disableAutoPan: true }}
         >
-          {/* Контейнер окна */}
-          <div style={{ width: 280, maxHeight: '40vh', overflowY: 'auto' }} className="text-sm text-black">
-            {/* 1) СПИСОК СОБЫТИЙ */}
+          <div
+            style={{ width: 280, maxHeight: '40vh', overflowY: 'auto' }}
+            className="text-sm text-black"
+          >
             {!groupActiveId && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold">
-                  {t('ui.eventsHere', { count: openGroup.size })}
+                {/* Адрес общий */}
+                {openGroup.items[0]?.address && (
+                  <p className="mb-2 text-xs text-gray-700 flex items-center gap-1">
+                    📍 {openGroup.items[0].address}
+                  </p>
+                )}
+
+                {/* Заголовок */}
+                <h3 className="font-bold mb-2">
+                  {t('ui.eventsAtAddress', { count: openGroup.size })}
                 </h3>
-                </div>
+
+                {/* Список событий */}
                 <div className="divide-y divide-gray-200">
-                  {openGroup.items.map((ev: any) => {
+                  {openGroup.items.map((ev: any, idx: number) => {
                     const isFav = favorites.includes(String(ev.id));
                     return (
                       <button
                         key={ev.id}
                         className="w-full text-left py-2 hover:bg-gray-50"
                         onClick={() => {
-                          // вызывем onMarkerClick ради счётчика/логики,
-                          // но показываем детали ВНУТРИ этого окна
                           onMarkerClick(ev);
                           setGroupActiveId(String(ev.id));
                         }}
                       >
                         <div className="flex items-start gap-2">
+                          {/* Номер */}
                           <div className="mt-0.5">
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-800 text-white text-xs">
-                              {openGroup.items.indexOf(ev) + 1}
+                              {idx + 1}
                             </span>
                           </div>
-                          <div className="min-w-0">
-                          <div className="font-semibold truncate">{ev.title}</div>
-                          {/* Дата + время */}
-                          {(ev.start_date || ev.end_date) && (
-                            <div className="text-xs text-gray-600">
-                              {ev.start_date === ev.end_date
-                                ? formatDate(ev.start_date)
-                                : `${formatDate(ev.start_date)} - ${formatDate(ev.end_date)}`}
-                              {ev.start_time && (
-                                <> • {ev.start_time.slice(0,5)}</>
-                              )}
-                            </div>
-                          )}
-                          {/* Адрес */}
-                          {ev.address && (
-                            <div className="text-xs text-gray-500 truncate">{ev.address}</div>
-                          )}
 
+                          {/* Контент */}
+                          <div className="min-w-0">
+                            <div className="font-semibold truncate">{ev.title}</div>
+
+                            {/* Дата + время */}
+                            {(ev.start_date || ev.end_date) && (
+                              <div className="text-xs text-gray-600">
+                                {ev.start_date === ev.end_date
+                                  ? formatDate(ev.start_date)
+                                  : `${formatDate(ev.start_date)} - ${formatDate(ev.end_date)}`}
+                                {ev.start_time && <> • {ev.start_time.slice(0, 5)}</>}
+                              </div>
+                            )}
                           </div>
+
+                          {/* Избранное */}
                           <div className="ml-auto">
                             <Heart
                               className={`w-4 h-4 ${isFav ? 'text-pink-600' : 'text-gray-400'}`}
@@ -297,7 +303,6 @@ const MemoizedMap: React.FC<Props> = ({
                 </div>
               </div>
             )}
-
             {/* 2) ДЕТАЛИ ОДНОГО СОБЫТИЯ ИЗ СПИСКА */}
             {groupActiveId && (() => {
               const ev = openGroup.items.find((x) => String(x.id) === String(groupActiveId));
@@ -309,7 +314,7 @@ const MemoizedMap: React.FC<Props> = ({
                 <div>
                   <button
                     onClick={() => setGroupActiveId(null)}
-                    className="mb-2 inline-flex items-center gap-1 text-gray-700 hover:text-black"
+                    className="mb-2 inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-bold"
                     title="Back to list"
                   >
                     <ChevronLeft className="w-4 h-4" />
