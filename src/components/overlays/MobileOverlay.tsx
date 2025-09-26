@@ -279,6 +279,8 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               <p>{t('info.search')}</p>
               <p>{t('info.session')}</p>
               <p>{t('info.restriction')}</p>
+              <p>{t('info.feedback')}</p>
+              <p>{t('info.addEvent')}</p>
             </div>
           </div>
         )}
@@ -599,10 +601,10 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
           <button
             type="button"
             onClick={() => setShowInfo(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-gray-300 shadow hover:bg-gray-100"
+            className="w-15 h-15 flex items-center justify-center rounded-full bg-white border border-gray-300 shadow hover:bg-gray-100"
             title={t('info.title')}
           >
-            <Info className="w-5 h-5 text-gray-700" />
+            <Info className="w-10 h-10 text-gray-700" />
           </button>
         </div>
 

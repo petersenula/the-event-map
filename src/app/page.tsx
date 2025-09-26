@@ -1723,71 +1723,29 @@ export default function EventMap() {
 
   const handleClearStorage = async () => {
     try {
-      // 1) Чистим только UI-настройки карты (как раньше)
-      localStorage.removeItem('map_center');
-      localStorage.removeItem('map_zoom');
-      localStorage.removeItem('saved_center');
-      localStorage.removeItem('saved_zoom');
+      // 1) Проверяем интернет
+      if (!navigator.onLine) {
+        alert(t('reload.partial')); 
+        return;
+      }
 
       // 2) Проверяем сессию
       const { data } = await supabase.auth.getSession();
 
       if (!data?.session) {
-        // ⛔ Сессии нет — события в IndexedDB НЕ трогаем!
-        // Пытаемся тихо восстановить — и только ПОТОМ чистим/перезаливаем
         await supabase.auth.refreshSession().catch(() => {});
-        const ok = await waitForSessionRestore(5000); // у тебя эта функция уже есть
+        const ok = await waitForSessionRestore(5000);
         if (!ok) {
-          alert('Сессия не восстановлена. Кэш событий не трогаем.');
+          alert(t('reload.partial')); 
           return;
         }
       }
 
-      // 3) Есть сессия — теперь можно полностью очистить кэш событий
-      await idbClearAll();
-      loadedEventIds.current.clear();
-      setEvents([]);
-      setFilteredEvents([]);
-
-      // 4) Заливаем ВСЕ события из Supabase в IndexedDB (странично)
-      const pageSize = 1000;
-      let page = 0;
-      const toState: any[] = [];
-
-      for (;;) {
-        const from = page * pageSize;
-        const to   = from + pageSize - 1;
-
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .order('id', { ascending: true })
-          .range(from, to);
-
-        if (error) {
-          console.error('[clear->reload] supabase error:', error);
-          break;
-        }
-
-        const batch = (data ?? []).map(normalizeEvent);
-        if (!batch.length) break;
-
-        toState.push(...batch);
-        try { await idbPutEvents(batch); } catch {}
-
-        if (batch.length < pageSize) break;
-        page++;
-      }
-
-      // 5) Обновляем состояние (все события уже в кэше)
-      setEvents(toState);
-      setFilteredEvents(toState);
-      for (const ev of toState) loadedEventIds.current.add(String(ev.id));
-
-      alert('Reloaded');
+      // 3) Полный перезапуск (как будто приложение закрыли и открыли)
+      window.location.reload();
 
     } catch (e) {
-      console.warn('[Clear storage] error:', e);
+      console.warn('[Reload] error:', e);
     }
   };
 

@@ -89,8 +89,10 @@
   "translation": "We use machine translation. If something is unclear, please check the organizer’s website.",
   "disclaimer": "We are not event organizers. Always verify the dates, time, and address on the organizer’s website.",
   "search": "You can search using filters or enter keywords such as Chilbi, Halloween, chocolate.",
-  "session": "If your session does not load, log out, close, and reopen the app.",
-  "restriction": "Data may not be used in bulk or for commercial purposes."
+  "session": "If the session does not load, first check your internet connection. Then try reloading the app using the 🔄 button. If that still doesn’t help, log out, close, and reopen the app.",
+  "restriction": "Data may not be used in bulk or for commercial purposes.",
+  "feedback": "If you would like to contact us or ask a question, please use the feedback form.",
+  "addEvent": "If you would like to add your event to the map, please use the add event form."
 },
 
   "profile": {
@@ -149,6 +151,12 @@
   "Start of period": "Start of period",
   "End of period": "End of period",
   "refreshing_events": "Refreshing events...",
-  "home_saved": "Home location has been saved."
+  "home_saved": "Home location has been saved.",
+
+  "reload": {
+  "partial": "No internet connection. A partial reload has been performed. For a full reload, please wait until you are online.",
+  "done": "The app has been fully reloaded."
+}
+
 
 }

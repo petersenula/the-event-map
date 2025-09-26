@@ -198,6 +198,8 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
               <p>{t('info.search')}</p>
               <p>{t('info.session')}</p>
               <p>{t('info.restriction')}</p>
+              <p>{t('info.feedback')}</p>
+              <p>{t('info.addEvent')}</p>
             </div>
           </div>
         )}

@@ -95,14 +95,16 @@
    "button": "Voir sous forme de liste"
 },
 
-"info":{
-  "title": "Astuces",
-  "intro": "Cette carte rassemble les événements les plus intéressants dans toute la Suisse.",
-  "translation": "Nous utilisons la traduction automatique. En cas de doute, vérifiez le site de l’organisateur.",
-  "disclaimer": "Nous ne sommes pas les organisateurs. Vérifiez toujours les dates, l’heure et l’adresse sur le site de l’organisateur.",
-  "search": "Vous pouvez rechercher avec des filtres ou entrer des mots-clés comme Chilbi, Halloween, chocolat.",
-  "session": "Si la session ne se charge pas, déconnectez-vous, fermez et rouvrez l’application.",
-  "restriction": "Les données ne peuvent pas être utilisées massivement ni à des fins commerciales."
+"info": {
+  "title": "Conseils",
+  "intro": "Sur cette carte, nous rassemblons les événements les plus intéressants de toute la Suisse.",
+  "translation": "Nous utilisons des traductions automatiques. En cas de doute, veuillez consulter le site de l’organisateur.",
+  "disclaimer": "Nous ne sommes pas organisateurs. Veuillez toujours vérifier la date, l’heure et l’adresse sur le site de l’organisateur.",
+  "search": "Vous pouvez utiliser les filtres ou entrer des mots-clés, par exemple Chilbi, Halloween ou chocolat.",
+  "session": "Si la session ne se charge pas, vérifiez d’abord votre connexion Internet. Essayez ensuite de recharger l’application avec le bouton 🔄. Si cela ne résout pas le problème, déconnectez-vous, fermez et rouvrez l’application.",
+  "restriction": "Les données ne peuvent pas être utilisées massivement ni à des fins commerciales.",
+  "feedback": "Si vous souhaitez nous contacter ou poser une question, veuillez utiliser le formulaire de retour.",
+  "addEvent": "Si vous souhaitez ajouter votre événement à la carte, veuillez utiliser le formulaire d’ajout d’événement."
 },
 
   "ui": {
@@ -153,6 +155,12 @@
 "profile": {
   "please_login": "L'inscription permet d'ajouter des événements aux favoris et d'enregistrer des paramètres personnels. Veuillez vous connecter ou vous inscrire.",
   "enter_address": "Veuillez entrer votre adresse :"
+},
+
+"reload": {
+  "partial": "Pas de connexion Internet. Un rechargement partiel a été effectué. Pour un rechargement complet, veuillez attendre d’être connecté à Internet.",
+  "done": "L’application a été entièrement rechargée."
 }
+
   
 }
