@@ -28,6 +28,14 @@ export default async function EventPage({ params }: { params: { id: string } }) 
   const start = `${ev.start_date}T${(ev.start_time || '00:00')}:00`;
   const end = ev.end_date ? `${ev.end_date}T${(ev.end_time || '23:59')}:00` : undefined;
 
+  const translations = [
+    { code: 'de', label: 'Deutsch', text: ev.description_de },
+    { code: 'fr', label: 'Français', text: ev.description_fr },
+    { code: 'it', label: 'Italiano', text: ev.description_it },
+    { code: 'en', label: 'English', text: ev.description_en },
+    { code: 'ru', label: 'Русский', text: ev.description_ru },
+  ].filter(t => typeof t.text === 'string' && t.text.trim().length > 0);
+
   const jsonLd: any = {
     '@context': 'https://schema.org',
     '@type': 'Event',
@@ -62,6 +70,17 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       <p><strong>Где:</strong> {ev.address}</p>
       {ev.website && <p><a href={ev.website} rel="nofollow">Сайт события</a></p>}
       {ev.description && <p>{ev.description}</p>}
+      {translations.length > 0 && (
+        <section>
+          <h2>Translations / Переводы</h2>
+          {translations.map(t => (
+            <details key={t.code} className="mb-2">
+              <summary><strong>{t.label}</strong></summary>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{t.text}</p>
+            </details>
+          ))}
+        </section>
+      )}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </main>
   );
