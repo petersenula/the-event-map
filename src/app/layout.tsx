@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     apple: '/icons/app-icon.png',
   },
   manifest: '/manifest.json',
+  other: 'google-site-verification=WrpXI7k7jQFuC09DkNFv4jPtXM8FyYWNBKECmwY12Kg',
 };
 
 export const viewport: Viewport = {

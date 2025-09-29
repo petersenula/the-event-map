@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://the-event-map.com/sitemap.xml
+Sitemap: https://ch.the-event-map.com/sitemap.xml
