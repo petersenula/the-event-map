@@ -421,6 +421,7 @@ const MemoizedMap: React.FC<Props> = ({
                   : `${formatDate(selected.start_date)} - ${formatDate(selected.end_date)}`}
               </p>
             )}
+            {selected.start_time && <> • {selected.start_time.slice(0, 5)}</>}
             <p className="mb-1 flex items-center gap-1">
               <MapPin className="w-4 h-4 text-gray-600" />
               <span className="flex-1">{selected.address}</span>
