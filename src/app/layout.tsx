@@ -12,13 +12,13 @@ export const metadata: Metadata = {
   title:
     'The Event Map – Events in Switzerland | Veranstaltungen in der Schweiz | Événements en Suisse | Eventi in Svizzera | События в Швейцарии',
   description:
-    'Interactive map of the most exciting events in Switzerland: festivals, concerts, fairs, exhibitions. Interaktive Karte ...',
+    'Interactive map of the most exciting events in Switzerland: festivals, concerts, fairs, exhibitions, workshops, masterclasses, quests, , sport, recreation rooms, entertainments, entertainment centers, Chilbi. Interaktive Karte der spannendsten Events der Schweiz: Festivals, Konzerte, Messen, Ausstellungen, Workshops, Aufenthaltsräume, Unterhaltungen, Unterhaltungszentren, Chilbi.',
   alternates: { canonical: '/' },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'The Event Map – Switzerland',
     description:
-      'Events, Festivals, Concerts, Exhibitions — Switzerland.',
+      'Events, Festivals, Concerts, Exhibitions, Workshops, Masterclasses, Quests, Sport, Fairs, Recreation Rooms, Entertainments, Entertainment centers, Chilbi — Switzerland.',
     url: '/',
     siteName: 'The Event Map',
     images: [{ url: '/preview.png', width: 1200, height: 630, alt: 'The Event Map – Switzerland' }],
