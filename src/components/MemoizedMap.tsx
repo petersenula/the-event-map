@@ -6,6 +6,9 @@ import {
   Share2, CalendarPlus, CalendarDays, Copy, Calendar, MapPin, Heart, Link as LinkIcon, ChevronLeft
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { supabase } from "@/utils/supabase/client";
+import { useAnonId } from "@/hooks/useAnonId";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface Props {
   setMapReady: (ready: boolean) => void;
@@ -80,6 +83,21 @@ const MemoizedMap: React.FC<Props> = ({
     : null;
   const isSelectedFav = selected ? favorites.includes(String(selected.id)) : false;
 
+  const handleViewEvent = async (ev: any) => {
+    try {
+      await supabase.from("event_views").insert({
+        event_id: ev.id,
+        user_id: session?.user?.id ?? null,
+        anon_id: session ? null : anonId,
+      });
+      console.log("✅ просмотр сохранён:", ev.id);
+    } catch (err) {
+      console.error("❌ ошибка сохранения просмотра:", err);
+    }
+
+    onMarkerClick(ev); // твоя текущая логика (например выделить событие и открыть InfoWindow)
+  };
+
   const { i18n, t } = useTranslation();
 
   // ===== SVG-иконка ДОМ (для home маркера) =====
@@ -124,6 +142,9 @@ const MemoizedMap: React.FC<Props> = ({
   // ===== 2) Состояние ОТКРЫТОЙ ГРУППЫ и АКТИВНОГО события в группе =====
   const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
   const [groupActiveId, setGroupActiveId] = useState<string | number | null>(null);
+
+  const anonId = useAnonId();
+  const session = useSession();
 
   const openGroup = useMemo(
     () => (openGroupKey ? groups.find((g) => g.key === openGroupKey) ?? null : null),
@@ -217,7 +238,7 @@ const MemoizedMap: React.FC<Props> = ({
                 setOpenGroupKey(group.key);
                 setGroupActiveId(null);
               } else {
-                onMarkerClick(ev0);
+                handleViewEvent(ev0);
               }
             }}
             onDblClick={() => onFavorite(ev0.id)}
@@ -262,7 +283,7 @@ const MemoizedMap: React.FC<Props> = ({
                         key={ev.id}
                         className="w-full text-left py-2 hover:bg-gray-50"
                         onClick={() => {
-                          onMarkerClick(ev);
+                          handleViewEvent(ev);
                           setGroupActiveId(String(ev.id));
                         }}
                       >
