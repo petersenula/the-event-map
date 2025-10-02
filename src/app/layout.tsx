@@ -45,9 +45,18 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2f2f2f" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-
-
-
+          {/* Google Ads Tag */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17615306742"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'AW-17615306742');
+            `,
+          }}
+        />  
         <script
           type="application/ld+json"
           // ВАЖНО: ничего не менять внутри dangerouslySetInnerHTML — так и должно быть
