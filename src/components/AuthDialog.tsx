@@ -55,6 +55,20 @@ export default function AuthDialog({ show, onClose, setViewCount }: Props) {
 
       if (error) {
         setSmsError(error.message);
+      } else if (data?.session) {
+          console.log('✅ Успешный логин через SMS:', data.session.user);
+
+          if (typeof window !== 'undefined' && (window as any).gtag) {
+            (window as any).gtag('event', 'conversion', {
+              send_to: 'AW-17615306742/mXuHCMTb4qUbEPb_0M9B', // ⚠️ сюда твой Conversion ID/Label
+              method: 'sms',
+            });
+          }
+
+          onClose();
+          window.location.reload();
+        }
+        else {
         setSmsError(t('auth.code_error'));
       }
     } catch (err: any) {

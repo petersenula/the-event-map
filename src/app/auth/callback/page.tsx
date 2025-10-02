@@ -8,11 +8,18 @@ export default function Callback() {
   const router = useRouter();
 
   useEffect(() => {
-    // Не ждём сессию, просто идём на главную
-    router.replace('/');
+    // 🔹 Отправляем Conversion событие в Google Ads
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'conversion', {
+        send_to: 'AW-17615306742/mXuHCMTb4qUbEPb_0M9B',
+        value: 1.0,
+        currency: 'CHF',
+        method: 'oauth', // можешь указать "google" или "email"
+      });
+    }
 
-    // ⚠️ Авто-восстановление сессии будет происходить в фоне
-    // через useSupabaseAuthListener + useSessionReady
+    // 🔹 Потом редиректим на главную
+    router.replace('/');
   }, [router]);
 
   return (
