@@ -440,7 +440,7 @@ const MemoizedMap: React.FC<Props> = ({
                 {selected.start_date === selected.end_date
                   ? formatDate(selected.start_date)
                   : `${formatDate(selected.start_date)} - ${formatDate(selected.end_date)}`}
-                  {selected.start_time && <> • {selected.start_time.slice(0, 5)}</>} - {selected.end_time && <> • {selected.end_time.slice(0, 5)}</>}
+                  {selected.start_time && <> {selected.start_time.slice(0, 5)}</>} - {selected.end_time && <> {selected.end_time.slice(0, 5)}</>}
               </p>
             )}
 
