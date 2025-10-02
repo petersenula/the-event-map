@@ -55,11 +55,6 @@ export default function AuthDialog({ show, onClose, setViewCount }: Props) {
 
       if (error) {
         setSmsError(error.message);
-      } else if (data?.session) {
-        console.log('✅ Успешный логин через SMS:', data.session.user);
-        onClose();
-        window.location.reload();
-      } else {
         setSmsError(t('auth.code_error'));
       }
     } catch (err: any) {
