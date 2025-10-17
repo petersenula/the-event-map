@@ -294,52 +294,62 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 className="p-1 rounded-full hover:bg-gray-200"
                 title="Profile"
               >
-              {!isAuthenticated ? (
-                <User className="w-7 h-7 text-gray-700" />
-              ) : (
-                <User className="w-7 h-7 text-green-600" />
-              )}
+                {!isAuthenticated ? (
+                  <User className="w-7 h-7 text-gray-700" />
+                ) : (
+                  <User className="w-7 h-7 text-green-600" />
+                )}
               </button>
+
               <span>
-              <span className="ml-2 text-[11px] font-medium text-gray-500">
-              { t('counter.loaded_of_total_short')} {loadedCount} / {totalCount ?? 0} 
+                <span className="ml-2 text-[11px] font-medium text-gray-500">
+                  { t('counter.loaded_of_total_short')} {loadedCount} / {totalCount ?? 0}
+                </span>
               </span>
-              </span>
+
               <div className="flex items-center gap-2">
                 <select
-                    value={lang}
-                    onChange={handleLanguageChange}
-                    className="px-2 py-1 rounded-md shadow text-sm border border-gray-300 bg-white"
-                    >
-                    <option value="en">EN</option>
-                    <option value="de">DE</option>
-                    <option value="fr">FR</option>
-                    <option value="it">IT</option>
-                    <option value="ru">RU</option>
+                  value={lang}
+                  onChange={handleLanguageChange}
+                  className="px-2 py-1 rounded-md shadow text-sm border border-gray-300 bg-white"
+                >
+                  <option value="en">EN</option>
+                  <option value="de">DE</option>
+                  <option value="fr">FR</option>
+                  <option value="it">IT</option>
+                  <option value="ru">RU</option>
                 </select>
+
                 {/* 🆕 кнопка очистки */}
                 <button
-                    onClick={handleClearStorage}
-                    title="Clear local storage"
-                    className="text-gray-500 hover:text-red-500 transition p-1"
-                    >
-                    <RefreshCw size={20} />
+                  onClick={handleClearStorage}
+                  title="Clear local storage"
+                  className="text-gray-500 hover:text-red-500 transition p-1"
+                >
+                  <RefreshCw size={20} />
                 </button>
+
+                {/* ИЗБРАННОЕ */}
                 <button
+                  data-tour="favorite"
                   onClick={() => (showFavoritesList ? setShowFavoritesList(false) : openFavorites())}
                   className={`p-2 rounded-full border ${showFavoritesList ? 'bg-pink-100' : 'bg-white'}`}
                   title={t('ui.favorites')}
                 >
                   <Heart className="w-5 h-5 text-pink-600" />
                 </button>
-                {/* Filters button */}
+
+                {/* ФИЛЬТРЫ */}
                 <button
-                    onClick={() => setShowMobileFilters(true)}
-                    className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
-                    title={t('filters.header')}
+                  data-tour="filters"
+                  onClick={() => setShowMobileFilters(true)}
+                  className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
+                  title={t('filters.header')}
                 >
-                    <Filter className={`w-5 h-5 ${hasActiveFilters ? 'text-green-600' : 'text-gray-600'}`} />
+                  <Filter className={`w-5 h-5 ${hasActiveFilters ? 'text-green-600' : 'text-gray-600'}`} />
                 </button>
+
+                {/* СПИСОК СОБЫТИЙ */}
                 <button
                   onClick={() => (showEventList ? setShowEventList(false) : openEventList())}
                   className="p-2 rounded-full bg-white border border-gray-300 hover:bg-gray-100"
@@ -350,8 +360,8 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               </div>
             </div>
 
-            {/* строка 2: компактные даты + выбранный период */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* 🗓️ ДАТЫ — оборачиваем оба пикера в один контейнер для тура */}
+            <div data-tour="calendar" className="grid grid-cols-2 gap-2">
               {/* START DATE */}
               <div className="bg-white/90 text-black border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
                 <DatePicker
@@ -367,7 +377,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                   className="w-full !bg-transparent !text-black text-xs"
                   calendarClassName="dp-sm"
                   popperClassName="dp-sm"
-                />  
+                />
               </div>
 
               {/* END DATE */}
@@ -380,7 +390,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                   selectsEnd
                   startDate={dateRange[0]?.startDate ?? undefined}
                   endDate={dateRange[0]?.endDate ?? undefined}
-                  minDate={dateRange[0]?.startDate ?? undefined}  // <-- ключевая строка
+                  minDate={dateRange[0]?.startDate ?? undefined}
                   placeholderText={t('End of period')}
                   dateFormat="dd.MM.yyyy"
                   className="w-full !bg-transparent !text-black text-xs"
@@ -405,17 +415,18 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 </div>
               </div>
             )}
+
+            {/* 🔎 ПОИСК */}
             <div className="flex items-center gap-2 w-full max-w-[300px] bg-white border border-gray-300 rounded-md shadow-sm px-2 py-1">
               <Search className="w-5 h-5 text-gray-500 flex-shrink-0" />
-
               <input
+                data-tour="search"
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
               />
-
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}

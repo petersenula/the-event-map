@@ -441,7 +441,7 @@ const MemoizedMap: React.FC<Props> = ({
                 {selected.start_date === selected.end_date
                   ? formatDate(selected.start_date)
                   : `${formatDate(selected.start_date)} - ${formatDate(selected.end_date)}`}
-                  {selected.start_time && <> {selected.start_time.slice(0, 5)}</>} - {selected.end_time && <> {selected.end_time.slice(0, 5)}</>}
+                {selected.start_time && <> {selected.start_time.slice(0, 5)}</>} - {selected.end_time && <> {selected.end_time.slice(0, 5)}</>}
               </p>
             )}
 
@@ -454,6 +454,7 @@ const MemoizedMap: React.FC<Props> = ({
                 }}
                 className="p-1 hover:bg-gray-100 rounded"
                 title="Copy address"
+                aria-label="Copy address"
               >
                 <Copy className="w-4 h-4 text-gray-500" />
               </button>
@@ -475,36 +476,51 @@ const MemoizedMap: React.FC<Props> = ({
             )}
 
             <div className="mt-4 flex gap-2 justify-start">
+              {/* ❤️ Избранное */}
               <button
+                data-tour="favorite"
                 onClick={() => onFavorite(String(selected.id))}
                 className="p-1 hover:bg-gray-100 rounded"
                 title={isSelectedFav ? 'Remove from favorites' : 'Add to favorites'}
+                aria-label={isSelectedFav ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <Heart
                   className={`w-5 h-5 ${isSelectedFav ? 'text-pink-600' : 'text-gray-600'}`}
                   fill={isSelectedFav ? 'currentColor' : 'none'}
                 />
               </button>
+
+              {/* 🤝 Поделиться */}
               <button
+                data-tour="share"
                 onClick={() => shareEvent(selected)}
                 className="p-1 hover:bg-gray-100 rounded"
                 title="Share"
+                aria-label="Share"
               >
                 <Share2 className="w-5 h-5 text-gray-600" />
               </button>
+
+              {/* 📅 Добавить в календарь (ICS) */}
               <button
+                data-tour="add-to-calendar"
                 onClick={() => downloadICS(makeICS(selected), 'event.ics')}
                 className="p-1 hover:bg-gray-100 rounded"
                 title="Add to Calendar"
+                aria-label="Add to Calendar"
               >
                 <CalendarPlus className="w-5 h-5 text-gray-600" />
               </button>
+
+              {/* Альтернатива: Google Calendar (можно дать отдельный якорь при желании) */}
               <a
+                // data-tour="add-to-calendar-google" // если хочешь отдельный шаг — включи и добавь в steps
                 href={makeGoogleCalendarUrl(selected)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1 hover:bg-gray-100 rounded"
                 title="Google Calendar"
+                aria-label="Google Calendar"
               >
                 <CalendarDays className="w-5 h-5 text-gray-600" />
               </a>
