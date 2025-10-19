@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Filter, Search, Heart, Share2, CalendarPlus, User, Home } from 'lucide-react';
+import { X, Filter, Search, Heart, Share2, CalendarPlus, Calendar, User, Home, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type LangItem = { code: string; label: string };
@@ -58,15 +58,14 @@ export default function WelcomeIntroDialog({
 
         {/* Выбор языка */}
         <div className="mt-3">
-          <p className="text-sm font-semibold mb-2">{t('welcome.choose')}</p>
-          <div className="flex flex-wrap gap-2">
-            {availableLanguages.map(({ code, label }) => {
+            <div className="flex flex-wrap gap-1 justify-center">
+                {availableLanguages.map(({ code, label }) => {
                 const isActive = code === currentLang;
                 return (
                     <button
                     key={code}
                     onClick={() => onChangeLanguage(code)}
-                    className={`px-3 py-1 rounded-full border text-sm transition
+                    className={`px-2.5 py-1 rounded-full border text-xs transition
                         ${isActive
                         ? 'bg-gray-200 border-gray-400 text-gray-800 font-medium'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'}
@@ -76,7 +75,7 @@ export default function WelcomeIntroDialog({
                     </button>
                 );
                 })}
-          </div>
+            </div>
         </div>
 
         {/* Инструкции */}
@@ -85,7 +84,7 @@ export default function WelcomeIntroDialog({
 
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <CalendarPlus className="w-4 h-4 text-gray-600" />
+              <Calendar className="w-4 h-4 text-gray-600" />
               <span>{t('welcome.howto.0')}</span>
             </li>
             <li className="flex items-center gap-2">
@@ -97,7 +96,7 @@ export default function WelcomeIntroDialog({
               <span>{t('welcome.howto.2')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-4 h-4 text-gray-600">📍</span>
+              <List className="w-4 h-4 text-pink-500" />
               <span>{t('welcome.howto.3')}</span>
             </li>
             <li className="flex items-center gap-2">
@@ -115,10 +114,6 @@ export default function WelcomeIntroDialog({
             <li className="flex items-center gap-2">
               <User className="w-4 h-4 text-gray-600" />
               <span>{t('welcome.howto.7')}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Home className="w-4 h-4 text-gray-600" />
-              <span>{t('welcome.howto.8')}</span>
             </li>
           </ul>
         </div>

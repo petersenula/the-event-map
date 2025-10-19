@@ -160,24 +160,22 @@
   "done": "The app has been fully reloaded."
 },
 
-"welcome": {
-  "title": "Welcome to The Event Map",
-  "tagline": "We collect the most interesting events across Switzerland — in five languages.",
-  "choose": "Choose your language",
-  "howtoTitle": "How to use the map",
-  "howto": [
-    "Set the period: pick start and end dates.",
-    "Use filters: theme, for kids/adults, and age.",
-    "Use search to find events by keywords.",
-    "Tap a pin or a list item to see details.",
-    "Save favorites with the heart.",
-    "Share events with friends.",
-    "Add to your calendar in one click.",
-    "Sign in to sync favorites and add your own events.",
-    "Set your home location for quicker navigation."
-  ],
-  "ctaStart": "Start exploring",
-  "ctaSkip": "Skip for now"
-}
+  "welcome": {
+    "title": "Welcome to The Event Map — your guide to events that make life brighter.",
+    "tagline": "We bring together the most exciting activities across Switzerland — from creative workshops to major festivals, for all ages and interests.",
+    "choose": "Choose your language:",
+    "howtoTitle": "✨ Customize your map:",
+    "howto": [
+      "Select dates to see what's happening when.",
+      "Use filters by topic and age.",
+      "Search by keyword — marathon, Halloween, chocolate...",
+      "View events on the map or in a handy list.",
+      "Add your favorites,",
+      "save them to your calendar and",
+      "share with friends.",
+      "Sign in to save your preferences, sync favorites and find events near you."
+    ],
+    "ctaStart": "Start exploring"
+  }
 
 }

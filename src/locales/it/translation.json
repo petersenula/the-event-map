@@ -158,25 +158,22 @@
   "done": "L’applicazione è stata ricaricata completamente."
 },
 
-"welcome": {
-  "title": "Benvenuti su The Event Map",
-  "tagline": "Raccogliamo gli eventi più interessanti in tutta la Svizzera — in cinque lingue.",
-  "choose": "Scegli la tua lingua",
-  "howtoTitle": "Come usare la mappa",
-  "howto": [
-    "Imposta il periodo: seleziona data di inizio e fine.",
-    "Usa i filtri: tema, per bambini/adulti e fascia d’età.",
-    "Cerca gli eventi con parole chiave.",
-    "Tocca un pin o un elemento della lista per i dettagli.",
-    "Salva tra i preferiti con il cuore.",
-    "Condividi gli eventi con gli amici.",
-    "Aggiungi al calendario con un clic.",
-    "Accedi per sincronizzare i preferiti e aggiungere i tuoi eventi.",
-    "Imposta la tua posizione di casa per navigare più velocemente."
-  ],
-  "ctaStart": "Inizia",
-  "ctaSkip": "Più tardi"
-}
-
+  "welcome": {
+    "title": "Benvenuto su The Event Map — la mappa degli eventi che rendono la vita più vivace.",
+    "tagline": "Raccogliamo gli eventi più interessanti in tutta la Svizzera — dai workshop ai grandi festival, per tutte le età e interessi.",
+    "choose": "Scegli la lingua:",
+    "howtoTitle": "✨ Personalizza la tua mappa:",
+    "howto": [
+      "Seleziona le date per vedere gli eventi nel periodo desiderato.",
+      "Usa i filtri per tema e fascia d’età.",
+      "Cerca per parola chiave — maratona, Halloween, cioccolato...",
+      "Guarda gli eventi sulla mappa o nella lista.",
+      "Aggiungi ai preferiti,",
+      "salvali nel calendario e",
+      "condividili con gli amici.",
+      "Accedi per salvare le impostazioni, sincronizzare i preferiti e trovare eventi vicino a te."
+    ],
+    "ctaStart": "Inizia"
+  }
 
 }
