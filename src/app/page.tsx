@@ -29,6 +29,7 @@ import MapLayer from '@/components/MapLayer';
 import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
+import WelcomeIntroDialog from '@/components/WelcomeIntroDialog';
 import {
   idbGetEventsInBounds,
   idbPutEvents,
@@ -965,6 +966,25 @@ export default function EventMap() {
     return () => clearInterval(interval);
   }, [mapReady, fetchEventsInBounds]);
 
+  useEffect(() => {
+    // Показываем приветствие только один раз и только неавторизованным
+    try {
+      const seen = localStorage.getItem('welcome_seen_v1');
+      if (!seen && mapReady && !isAuthenticated) {
+        // небольшая пауза, чтобы карта успела подгрузиться
+        const t = setTimeout(() => setShowWelcome(true), 500);
+        return () => clearTimeout(t);
+      }
+    } catch (e) {
+      console.warn('Ошибка при проверке welcome_seen_v1', e);
+    }
+  }, [mapReady, isAuthenticated]);
+
+  const handleWelcomeLangChange = (code: string) => {
+    i18n.changeLanguage(code);
+    localStorage.setItem('lang', code);
+  };
+
   const shouldForceReloadRef = useRef(false);
 
   useEffect(() => {
@@ -1803,113 +1823,115 @@ export default function EventMap() {
           ensureBounds={ensureBounds}
         />
 
-      {isMobile ? (
-        <MobileOverlay
-          i18n={i18n}
-          t={t}
-          mapRef={mapRef}
-          showAuthPrompt={showAuthPrompt}
-          setShowAuthPrompt={setShowAuthPrompt}
-          availableLanguages={availableLanguages}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setShowFeedbackModal={setShowFeedbackModal}
-          handleLanguageChange={handleLanguageChange}
-          handleClearStorage={handleClearStorage}
-          handleHomeClick={handleHomeClick}
-          isAuthenticated={isAuthenticated}
-          handleLogout={handleLogout}
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-          formatDate={formatDate}
-          formatTime={formatTime}
-          formatWebsite={formatWebsite}
-          showEventList={showEventList}
-          setShowEventList={setShowEventList}
-          listRef={listRef ?? { current: null }}
-          filteredByView={filteredByView}
-          visibleCount={visibleCount}
-          selectedEvent={selectedEvent?.toString() ?? null}
-          setSelectedEvent={setSelectedEvent}
-          getDescription={getDescription}
-          shareEvent={shareEvent}
-          downloadICS={downloadICS}
-          makeICS={makeICS}
-          makeGoogleCalendarUrl={makeGoogleCalendarUrl}
-          favorites={favorites.map(String)}
-          toggleFavorite={toggleFavorite}
-          showMobileFilters={showMobileFilters}
-          setShowMobileFilters={setShowMobileFilters}
-          markerColors={markerColors}
-          filterType={filterType}
-          setFilterType={setFilterType}
-          translateTypeUI={translateTypeUI}
-          filterFormat={filterFormat}
-          setFilterFormat={setFilterFormat}
-          filterAge={filterAge}
-          setFilterAge={setFilterAge}
-          handleResetFilters={handleResetFilters}
-          handleNavigate={handleNavigate}
-          showFavoritesList={showFavoritesList}
-          setShowFavoritesList={setShowFavoritesList}
-          userDisplay={userDisplay}
-          loadedCount={events.length}
-          totalCount={totalCount}
-          isAuthenticated={!!session?.user}
-        />
-      ) : (
-        <DesktopOverlay 
-          showAuthPrompt={showAuthPrompt}
-          setShowAuthPrompt={setShowAuthPrompt}
-          mapRef={mapRef}
-          dateRange={dateRange}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          setDateRange={setDateRange}
-          setShowFeedbackModal={setShowFeedbackModal}
-          formatDate={formatDate}
-          formatTime={formatTime}
-          formatWebsite={formatWebsite}
-          getDescription={getDescription}
-          i18n={i18n}
-          t={t}
-          availableLanguages={availableLanguages}
-          handleLanguageChange={handleLanguageChange}
-          handleClearStorage={handleClearStorage}
-          handleHomeClick={handleHomeClick}
-          isAuthenticated={isAuthenticated}
-          handleLogout={handleLogout}
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-          handleResetFilters={handleResetFilters}
-          markerColors={markerColors}
-          filterType={filterType}
-          setFilterType={setFilterType}
-          translateTypeUI={translateTypeUI}
-          filterFormat={filterFormat}
-          setFilterFormat={setFilterFormat}
-          filterAge={filterAge}
-          setFilterAge={setFilterAge}
-          showEventList={showEventList}
-          setShowEventList={setShowEventList}
-          listRef={listRef ?? { current: null }}
-          filteredByView={filteredByView}
-          visibleCount={visibleCount}
-          selectedEvent={selectedEvent?.toString() ?? null}
-          setSelectedEvent={setSelectedEvent}
-          shareEvent={shareEvent}
-          downloadICS={downloadICS}
-          makeICS={makeICS}
-          makeGoogleCalendarUrl={makeGoogleCalendarUrl}
-          favorites={favorites}
-          toggleFavorite={toggleFavorite}
-          showFavoritesList={showFavoritesList}
-          setShowFavoritesList={setShowFavoritesList}
-          userDisplay={userDisplay}
-          loadedCount={events.length}
-          totalCount={totalCount}
-          isAuthenticated={!!session?.user}
-        />
+      {!showWelcome && (
+        isMobile ? (
+          <MobileOverlay
+            i18n={i18n}
+            t={t}
+            mapRef={mapRef}
+            showAuthPrompt={showAuthPrompt}
+            setShowAuthPrompt={setShowAuthPrompt}
+            availableLanguages={availableLanguages}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setShowFeedbackModal={setShowFeedbackModal}
+            handleLanguageChange={handleLanguageChange}
+            handleClearStorage={handleClearStorage}
+            handleHomeClick={handleHomeClick}
+            isAuthenticated={isAuthenticated}
+            handleLogout={handleLogout}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            formatDate={formatDate}
+            formatTime={formatTime}
+            formatWebsite={formatWebsite}
+            showEventList={showEventList}
+            setShowEventList={setShowEventList}
+            listRef={listRef ?? { current: null }}
+            filteredByView={filteredByView}
+            visibleCount={visibleCount}
+            selectedEvent={selectedEvent?.toString() ?? null}
+            setSelectedEvent={setSelectedEvent}
+            getDescription={getDescription}
+            shareEvent={shareEvent}
+            downloadICS={downloadICS}
+            makeICS={makeICS}
+            makeGoogleCalendarUrl={makeGoogleCalendarUrl}
+            favorites={favorites.map(String)}
+            toggleFavorite={toggleFavorite}
+            showMobileFilters={showMobileFilters}
+            setShowMobileFilters={setShowMobileFilters}
+            markerColors={markerColors}
+            filterType={filterType}
+            setFilterType={setFilterType}
+            translateTypeUI={translateTypeUI}
+            filterFormat={filterFormat}
+            setFilterFormat={setFilterFormat}
+            filterAge={filterAge}
+            setFilterAge={setFilterAge}
+            handleResetFilters={handleResetFilters}
+            handleNavigate={handleNavigate}
+            showFavoritesList={showFavoritesList}
+            setShowFavoritesList={setShowFavoritesList}
+            userDisplay={userDisplay}
+            loadedCount={events.length}
+            totalCount={totalCount}
+            isAuthenticated={!!session?.user}
+          />
+        ) : (
+          <DesktopOverlay 
+            showAuthPrompt={showAuthPrompt}
+            setShowAuthPrompt={setShowAuthPrompt}
+            mapRef={mapRef}
+            dateRange={dateRange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            setDateRange={setDateRange}
+            setShowFeedbackModal={setShowFeedbackModal}
+            formatDate={formatDate}
+            formatTime={formatTime}
+            formatWebsite={formatWebsite}
+            getDescription={getDescription}
+            i18n={i18n}
+            t={t}
+            availableLanguages={availableLanguages}
+            handleLanguageChange={handleLanguageChange}
+            handleClearStorage={handleClearStorage}
+            handleHomeClick={handleHomeClick}
+            isAuthenticated={isAuthenticated}
+            handleLogout={handleLogout}
+            showFilters={showFilters}
+            setShowFilters={setShowFilters}
+            handleResetFilters={handleResetFilters}
+            markerColors={markerColors}
+            filterType={filterType}
+            setFilterType={setFilterType}
+            translateTypeUI={translateTypeUI}
+            filterFormat={filterFormat}
+            setFilterFormat={setFilterFormat}
+            filterAge={filterAge}
+            setFilterAge={setFilterAge}
+            showEventList={showEventList}
+            setShowEventList={setShowEventList}
+            listRef={listRef ?? { current: null }}
+            filteredByView={filteredByView}
+            visibleCount={visibleCount}
+            selectedEvent={selectedEvent?.toString() ?? null}
+            setSelectedEvent={setSelectedEvent}
+            shareEvent={shareEvent}
+            downloadICS={downloadICS}
+            makeICS={makeICS}
+            makeGoogleCalendarUrl={makeGoogleCalendarUrl}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
+            showFavoritesList={showFavoritesList}
+            setShowFavoritesList={setShowFavoritesList}
+            userDisplay={userDisplay}
+            loadedCount={events.length}
+            totalCount={totalCount}
+            isAuthenticated={!!session?.user}
+          />
+        )
       )}
       {showFavoritesList && (
         <>
@@ -2074,7 +2096,9 @@ export default function EventMap() {
             </div>
           )}
         </>
+      
       )}
+    
 
       {/* ОБЩИЕ МОДАЛКИ */}
       {showTranslation && (
@@ -2097,12 +2121,16 @@ export default function EventMap() {
         }}
         setViewCount={setViewCount}
       />
-      <WelcomeDialog
+
+      <WelcomeIntroDialog
         show={showWelcome}
-        onClose={() => setShowWelcome(false)}
-        mapReady={mapReady}
-        mapRef={mapRef}
-        fetchEventsInBounds={fetchEventsInBounds}
+        onClose={() => {
+          setShowWelcome(false);
+          try { localStorage.setItem('welcome_seen_v1', '1'); } catch {}
+        }}
+        availableLanguages={availableLanguages.map(({ code, label }) => ({ code, label }))}
+        currentLang={(i18n.language?.split?.('-')[0] ?? 'en')}
+        onChangeLanguage={handleWelcomeLangChange}
       />
 
       <FeedbackModal
@@ -2114,7 +2142,7 @@ export default function EventMap() {
           onClose={() => setShowHomeModal(false)}
           onSaved={() => alert(t('home_saved'))}
           mapRef={mapRef}
-        />
+        />        
       )}
     </ClientOnly>
   );

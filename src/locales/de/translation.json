@@ -155,7 +155,26 @@
 "reload": {
   "partial": "Keine Internetverbindung. Es wurde ein teilweiser Neustart durchgeführt. Für einen vollständigen Neustart warten Sie bitte auf eine Internetverbindung.",
   "done": "Die Anwendung wurde vollständig neu geladen."
-}
+},
 
+"welcome": {
+  "title": "Willkommen bei The Event Map",
+  "tagline": "Wir sammeln die spannendsten Veranstaltungen in der ganzen Schweiz – in fünf Sprachen.",
+  "choose": "Wähle deine Sprache",
+  "howtoTitle": "So nutzt du die Karte",
+  "howto": [
+    "Zeitraum festlegen: Start- und Enddatum wählen.",
+    "Filter verwenden: Thema, für Kinder/Erwachsene und Altersgruppe.",
+    "Über die Suche Veranstaltungen per Stichwort finden.",
+    "Auf einen Pin oder Listeneintrag tippen, um Details zu sehen.",
+    "Favoriten mit dem Herz speichern.",
+    "Veranstaltungen mit Freunden teilen.",
+    "Mit einem Klick zum Kalender hinzufügen.",
+    "Anmelden, um Favoriten zu synchronisieren und eigene Events hinzuzufügen.",
+    "Deinen Wohnort setzen für schnellere Navigation."
+  ],
+  "ctaStart": "Los geht’s",
+  "ctaSkip": "Später"
+}
 
 }

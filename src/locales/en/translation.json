@@ -158,7 +158,26 @@
   "reload": {
   "partial": "No internet connection. A partial reload has been performed. For a full reload, please wait until you are online.",
   "done": "The app has been fully reloaded."
-}
+},
 
+"welcome": {
+  "title": "Welcome to The Event Map",
+  "tagline": "We collect the most interesting events across Switzerland — in five languages.",
+  "choose": "Choose your language",
+  "howtoTitle": "How to use the map",
+  "howto": [
+    "Set the period: pick start and end dates.",
+    "Use filters: theme, for kids/adults, and age.",
+    "Use search to find events by keywords.",
+    "Tap a pin or a list item to see details.",
+    "Save favorites with the heart.",
+    "Share events with friends.",
+    "Add to your calendar in one click.",
+    "Sign in to sync favorites and add your own events.",
+    "Set your home location for quicker navigation."
+  ],
+  "ctaStart": "Start exploring",
+  "ctaSkip": "Skip for now"
+}
 
 }

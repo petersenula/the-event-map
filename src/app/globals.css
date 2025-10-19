@@ -10,6 +10,15 @@ body.no-page-scroll { overflow: hidden; } /* будем включать тол�
   width: 230px !important; /* ограничиваем ширину */
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: translate(-50%, -55%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
 /* Подгоняем контейнер месяца */
 .react-datepicker__month-container {
   width: 100%;
