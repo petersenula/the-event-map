@@ -851,7 +851,7 @@ export default function EventMap() {
         !filterType.length || ev.types?.some((type: string) => filterType.includes(type));
 
       const matchesFormat =
-        !filterFormat.length || filterFormat.includes(ev.format);
+        !filterFormat.length || ev.format?.some((format: string) => filterFormat.includes(format));
 
       const matchesAge =
         !filterAge.length || ev.age_group?.some((age: string) => filterAge.includes(age));
