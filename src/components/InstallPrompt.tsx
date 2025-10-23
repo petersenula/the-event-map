@@ -41,7 +41,7 @@ export default function InstallPrompt() {
         className="ml-4 px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg"
         onClick={handleInstallClick}
       >
-        Установить
+        Download
       </button>
     </div>
   );
