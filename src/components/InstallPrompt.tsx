@@ -35,7 +35,7 @@ export default function InstallPrompt() {
   if (!showInstallButton) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 bg-white border rounded-xl shadow-lg p-4 flex justify-between items-center z-50">
+    <div className="fixed bottom-6 left-4 right-4 bg-white border rounded-xl shadow-lg p-4 flex justify-between items-center z-50">
       <span className="text-sm font-medium">Download the app!</span>
       <button
         className="ml-4 px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg"
