@@ -36,7 +36,7 @@ export default function InstallPrompt() {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-white border rounded-xl shadow-lg p-4 flex justify-between items-center z-50">
-      <span className="text-sm font-medium">Установить приложение на телефон?</span>
+      <span className="text-sm font-medium">Download the app!</span>
       <button
         className="ml-4 px-4 py-2 text-sm font-semibold text-white bg-black rounded-lg"
         onClick={handleInstallClick}
