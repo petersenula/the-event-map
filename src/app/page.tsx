@@ -1431,7 +1431,18 @@ export default function EventMap() {
         return eventAges.some(age => filterAge.includes(age));
       });
     }
-    if (filterFormat.length) filtered = filtered.filter(ev => filterFormat.includes(ev.format));
+    if (filterFormat.length) {
+      filtered = filtered.filter((ev) => {
+        const formats = Array.isArray(ev.format)
+          ? ev.format.map((f) => (typeof f === 'string' ? f.trim() : ''))
+          : typeof ev.format === 'string'
+          ? ev.format.split(',').map((f) => f.trim())
+          : [];
+
+        // Проверяем, пересекаются ли массивы
+        return formats.some((f) => filterFormat.includes(f));
+      });
+    }
     if (filterType.length) {
       filtered = filtered.filter((ev) => {
         const arr: string[] = Array.isArray(ev.type) ? ev.type : [];
