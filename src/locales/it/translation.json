@@ -158,22 +158,18 @@
   "done": "L’applicazione è stata ricaricata completamente."
 },
 
-  "welcome": {
-    "title": "Benvenuto su The Event Map — la mappa degli eventi che rendono la vita più vivace.",
-    "tagline": "Raccogliamo gli eventi più interessanti in tutta la Svizzera — dai workshop ai grandi festival, per tutte le età e interessi.",
-    "choose": "Scegli la lingua:",
-    "howtoTitle": "✨ Personalizza la tua mappa:",
-    "howto": [
-      "Seleziona le date per vedere gli eventi nel periodo desiderato.",
-      "Usa i filtri per tema e fascia d’età.",
-      "Cerca per parola chiave — maratona, Halloween, cioccolato...",
-      "Guarda gli eventi sulla mappa o nella lista.",
-      "Aggiungi ai preferiti,",
-      "salvali nel calendario e",
-      "condividili con gli amici.",
-      "Accedi per salvare le impostazioni, sincronizzare i preferiti e trovare eventi vicino a te."
-    ],
-    "ctaStart": "Inizia"
-  }
+"welcome": {
+  "title": "Scopri i migliori eventi in Svizzera",
+  "tagline": "Festival, mercati, laboratori – tutto in un unico posto.",
+  "choose": "Scegli la tua lingua:",
+  "howto": [
+    "Filtri intelligenti per età e argomento",
+    "Cerca per parola chiave",
+    "Eventi nella lista e sulla mappa",
+    "Salva in calendario e nei preferiti",
+    "Condividi con gli amici"
+  ],
+  "ctaStart": "Iniziamo!"
+}
 
 }

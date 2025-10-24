@@ -161,21 +161,17 @@
 },
 
   "welcome": {
-    "title": "Welcome to The Event Map — your guide to events that make life brighter.",
-    "tagline": "We bring together the most exciting activities across Switzerland — from creative workshops to major festivals, for all ages and interests.",
+    "title": "Explore the best events in Switzerland",
+    "tagline": "Festivals, markets, workshops — all in one place.",
     "choose": "Choose your language:",
-    "howtoTitle": "✨ Customize your map:",
     "howto": [
-      "Select dates to see what's happening when.",
-      "Use filters by topic and age.",
-      "Search by keyword — marathon, Halloween, chocolate...",
-      "View events on the map or in a handy list.",
-      "Add your favorites,",
-      "save them to your calendar and",
-      "share with friends.",
-      "Sign in to save your preferences, sync favorites and find events near you."
+      "Smart filters by age & topic",
+      "Search by keyword",
+      "Events in the list & on the map",
+      "Save to calendar & favorites",
+      "share with friends."
     ],
-    "ctaStart": "Start exploring"
+    "ctaStart": "  Let's go!  "
   }
 
 }

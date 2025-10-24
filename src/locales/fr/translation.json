@@ -164,22 +164,18 @@
   "done": "L’application a été entièrement rechargée."
 },
 
-  "welcome": {
-    "title": "Bienvenue sur The Event Map — la carte des événements qui rendent la vie plus lumineuse.",
-    "tagline": "Découvrez les activités les plus passionnantes en Suisse — des ateliers créatifs aux grands festivals, pour tous les âges et tous les goûts.",
-    "choose": "Choisissez la langue :",
-    "howtoTitle": "✨ Personnalisez votre carte :",
-    "howto": [
-      "Choisissez les dates pour voir les événements au bon moment.",
-      "Utilisez les filtres par thème et par âge.",
-      "Recherchez par mot-clé — marathon, Halloween, chocolat...",
-      "Consultez les événements sur la carte ou dans la liste.",
-      "Ajoutez vos favoris,",
-      "enregistrez-les dans votre calendrier et",
-      "partagez-les avec vos amis.",
-      "Connectez-vous pour sauvegarder vos préférences, synchroniser vos favoris et trouver des événements près de chez vous."
-    ],
-    "ctaStart": "Commencer"
-  }
+"welcome": {
+  "title": "Découvrez les meilleurs événements en Suisse",
+  "tagline": "Festivals, marchés, ateliers – tout au même endroit.",
+  "choose": "Choisissez votre langue :",
+  "howto": [
+    "Filtres intelligents par âge et thème",
+    "Recherche par mot-clé",
+    "Événements dans la liste & sur la carte",
+    "Enregistrer dans le calendrier & favoris",
+    "Partager avec des amis"
+  ],
+  "ctaStart": "C’est parti !"
+}
   
 }

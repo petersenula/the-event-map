@@ -14,6 +14,7 @@ module.exports = {
     'border',
     'rounded-full',
     'px-3',
+    'px-12',
     'py-1',
     'py-2',
     'text-xs',

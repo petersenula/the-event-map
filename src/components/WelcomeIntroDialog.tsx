@@ -44,7 +44,7 @@ export default function WelcomeIntroDialog({
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
               {t('welcome.title')}
             </h2>
-            <p className="text-sm text-gray-600 mt-1 leading-snug">
+            <p className="text-base text-gray-600 mt-1 leading-snug">
               {t('welcome.tagline')}
             </p>
           </div>
@@ -80,54 +80,35 @@ export default function WelcomeIntroDialog({
 
         {/* Инструкции */}
         <div className="mt-6 space-y-2">
-          <h3 className="text-base font-semibold mb-3">{t('welcome.howtoTitle')}</h3>
-
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-600" />
+              <Filter className="w-4 h-4 text-gray-600" />
               <span>{t('welcome.howto.0')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-600" />
-              <span>{t('welcome.howto.1')}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-gray-600" />
+              <List className="w-4 h-4 text-gray-600" />
               <span>{t('welcome.howto.2')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <List className="w-4 h-4 text-pink-500" />
+              <Heart className="w-4 h-4 text-pink-500" />
               <span>{t('welcome.howto.3')}</span>
             </li>
             <li className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-pink-500" />
+              <Share2 className="w-4 h-4 text-pink-500" />
               <span>{t('welcome.howto.4')}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-gray-600" />
-              <span>{t('welcome.howto.5')}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <CalendarPlus className="w-4 h-4 text-gray-600" />
-              <span>{t('welcome.howto.6')}</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-600" />
-              <span>{t('welcome.howto.7')}</span>
             </li>
           </ul>
         </div>
 
         {/* Кнопка */}
-        <div className="mt-8 flex justify-end">
-            <button
-                onClick={onClose}
-                className="px-7 py-2 rounded-full border border-green-600 text-green-700 font-medium text-sm hover:bg-green-50 active:scale-[.98] transition"
-            >
-                {t('welcome.ctaStart') || 'Start exploring'}
-            </button>
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={onClose}
+            className="px-3 py-2 rounded-full border border-green-600 bg-green-200 text-grey font-medium text-sm hover:bg-green-50 active:scale-[.98] transition"
+          >
+            {t('welcome.ctaStart') || 'Start exploring'}
+          </button>
         </div>
-
       </div>
 
       {/* Анимация */}
