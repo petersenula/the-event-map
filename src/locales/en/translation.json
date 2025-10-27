@@ -15,7 +15,8 @@
     "apply": "Apply filters",
     "reset": "Reset filters",
     "children": "Children",
-    "adults": "Adults"
+    "adults": "Adults",
+    "families": "Families"
   },
 "format": {
     "any": "Family",
@@ -172,6 +173,17 @@
       "share with friends."
     ],
     "ctaStart": "  Let's go!  "
-  }
+  },
+
+"filterIntro": {
+  "title": "Too many options? Let’s make this easy.",
+  "subtitle": "Tell us what you're looking for.",
+  "audience": "For whom?",
+  "type": "What type?",
+  "apply": "Show as chosen",
+  "skip": "I'll try filters later",
+  "more": "Show more filters"
+}
+
 
 }

@@ -169,6 +169,17 @@
     "Mit Freunden teilen"
   ],
   "ctaStart": "Los geht’s!"
+},
+
+"filterIntro": {
+  "title": "Zu viele Optionen? Machen wir es einfacher.",
+  "subtitle": "Sagen Sie uns, wonach Sie suchen.",
+  "audience": "Für wen?",
+  "type": "Welcher Typ?",
+  "apply": "Anzeigen wie ausgewählt",
+  "skip": "Ich probiere Filter später aus",
+  "more": "Mehr Filter anzeigen"
 }
+
 
 }

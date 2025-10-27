@@ -45,6 +45,7 @@ interface MapLayerProps {
   resetEvents: () => void;
   setEvents: React.Dispatch<React.SetStateAction<any[]>>;
   setFilteredEvents: React.Dispatch<React.SetStateAction<any[]>>;
+  onEventViewed?: (ev: any) => void;
 }
 
 const MapLayer: React.FC<MapLayerProps> = ({
@@ -80,6 +81,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
   loadedEventIds,
   resetEvents,
   setEvents,
+  onEventViewed,
   setFilteredEvents,
 }) => {console.log('[MapLayer] mapRef:', mapRef);
     const selected = selectedEvent
@@ -353,6 +355,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
           onDragEnd={handleDragEnd}
           events={filteredByView}
           selectedId={selectedEvent?.toString() ?? null}
+          onEventViewed={onEventViewed}
           onMarkerClick={(event) => {
             console.log('[marker click]', event.id, event.lat, event.lng);
             setSelectedEvent((prev) => (prev === event.id ? null : event.id));

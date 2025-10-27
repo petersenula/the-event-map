@@ -11,6 +11,7 @@ import { useAnonId } from "@/hooks/useAnonId";
 import { useSession } from "@supabase/auth-helpers-react";
 
 interface Props {
+  onEventViewed?: (ev: any) => void;
   setMapReady: (ready: boolean) => void;
   favorites: string[];
   mapRef: React.RefObject<google.maps.Map | null>;
@@ -52,6 +53,7 @@ interface Props {
 }
 
 const MemoizedMap: React.FC<Props> = ({
+  onEventViewed,
   setMapReady,
   favorites,
   mapRef,
@@ -94,7 +96,7 @@ const MemoizedMap: React.FC<Props> = ({
     } catch (err) {
       console.error("❌ ошибка сохранения просмотра:", err);
     }
-
+    onEventViewed?.(ev); // ← вызываем наверх!
     onMarkerClick(ev); // твоя текущая логика (например выделить событие и открыть InfoWindow)
   };
 

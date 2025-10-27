@@ -30,6 +30,8 @@ import { isDateInRange } from '../lib/date';
 import AuthDialog from '@/components/AuthDialog';
 import WelcomeDialog from '@/components/WelcomeDialog';
 import WelcomeIntroDialog from '@/components/WelcomeIntroDialog';
+import FilterIntroDialog from '@/components/FilterIntroDialog';
+import { typeTranslationKeys } from '@/lib/typeTranslationKeys';
 import {
   idbGetEventsInBounds,
   idbPutEvents,
@@ -106,38 +108,6 @@ const markerColors: Record<string, string> = {
   'другое': 'ltblue',
 };
 
-const typeTranslationKeys: Record<string, string> = {
-  'культура': 'types.culture',
-  'выставка': 'types.exhibition',
-  'спектакль': 'types.performance',
-  'живопись': 'types.painting',
-  'наука': 'types.science',
-  'спорт': 'types.sport',
-  'природа': 'types.nature',
-  'здоровье': 'types.health',
-  'танцы': 'types.dance',
-  'музыка': 'types.music',
-  'технологии': 'types.technology',
-  'общение': 'types.communication',
-  'обучение': 'types.learning',
-  'книги': 'types.books',
-  'лекция': 'types.lecture',
-  'квест': 'types.quest',
-  'мастеркласс': 'types.masterclass',
-  'развлечение': 'types.entertainment',
-  'игра': 'types.game',
-  'детское': 'types.kids',
-  'кино': 'types.cinema',
-  'развлекательные центры': 'types.entertainment_centers',
-  'клубы и ночная жизнь': 'types.clubs_and_nightlife',
-  'ярмарка': 'types.fair',
-  'еда': 'types.food',
-  'фестиваль': 'types.festival',
-  'автомобили': 'types.cars',
-  'религия': 'types.religion',
-  'другое': 'types.other',
-};
-
 const ITEMS_PER_LOAD = 50;
 
 type DateRange = {
@@ -180,6 +150,14 @@ export default function EventMap() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const [showFavoritesList, setShowFavoritesList] = useState(false);
+
+  const eventClickCount = useRef(0);
+  const handleEventViewed = (ev: any) => {
+    eventClickCount.current += 1;
+    if (eventClickCount.current === 2) {
+      setShowFilterIntro(true);
+    }
+  };
 
   const [showHomeModal, setShowHomeModal] = useState(false);
   const handleHomeClick = () => {
@@ -818,18 +796,19 @@ export default function EventMap() {
       const eventStart = new Date(event.start_date);
       const eventEnd = new Date(event.end_date);
 
-      // Защита от некорректных дат
+      // Добавляем 1 день к дате окончания периода (включительно)
+      const rangeEnd = new Date(range.endDate);
+      rangeEnd.setDate(rangeEnd.getDate() + 1);
+
       if (isNaN(eventStart.getTime()) || isNaN(eventEnd.getTime())) return false;
 
-      return (
-        eventEnd >= range.startDate &&
-        eventStart <= range.endDate
-      );
+      return eventEnd >= range.startDate && eventStart < rangeEnd;
     }
 
     const query = searchQuery.toLowerCase().trim();
 
     const result = events.filter((ev) => {
+      // === Поиск ===
       const matchesSearch =
         !query ||
         [
@@ -847,15 +826,42 @@ export default function EventMap() {
             field.toLowerCase().includes(query)
         );
 
+      // === Тип ===
+      const eventTypes = Array.isArray(ev.types)
+        ? ev.types
+        : ev.types
+        ? [ev.types]
+        : [];
       const matchesType =
-        !filterType.length || ev.types?.some((type: string) => filterType.includes(type));
+        !filterType.length || eventTypes.some((type) => filterType.includes(type));
+
+      // === Формат (учёт any) ===
+      const eventFormats = Array.isArray(ev.format)
+        ? ev.format
+        : ev.format
+        ? [ev.format]
+        : [];
+
+      const expandedFormatFilter = filterFormat.includes('children')
+        ? ['children', 'any']
+        : filterFormat.includes('adults')
+        ? ['adults', 'any']
+        : filterFormat;
 
       const matchesFormat =
-        !filterFormat.length || ev.format?.some((format: string) => filterFormat.includes(format));
+        !filterFormat.length ||
+        eventFormats.some((format) => expandedFormatFilter.includes(format));
 
+      // === Возраст ===
+      const eventAges = Array.isArray(ev.age_group)
+        ? ev.age_group
+        : ev.age_group
+        ? [ev.age_group]
+        : [];
       const matchesAge =
-        !filterAge.length || ev.age_group?.some((age: string) => filterAge.includes(age));
+        !filterAge.length || eventAges.some((age) => filterAge.includes(age));
 
+      // === Дата ===
       const matchesDate = isDateInRange(ev);
 
       return matchesSearch && matchesType && matchesFormat && matchesAge && matchesDate;
@@ -1005,11 +1011,11 @@ export default function EventMap() {
     init();
   }, []);
 
-  // Подписка на изменение авторизации
-  // 1. Слушаем изменения авторизации
   const [showWelcome, setShowWelcome] = useState(false);
-  
-  
+  const [showFilterIntro, setShowFilterIntro] = useState(false);
+  const [filterIntroAge, setFilterIntroAge] = useState<string[]>([]);
+  const [filterIntroType, setFilterIntroType] = useState<string[]>([]);
+  const [eventOpenCount, setEventOpenCount] = useState(0);
 
   // 5.1 Периодический refresh токена каждые 5 минут
   useEffect(() => {
@@ -1832,9 +1838,10 @@ export default function EventMap() {
           setFilteredEvents={setFilteredEvents} 
           shouldForceReloadRef={shouldForceReloadRef}
           ensureBounds={ensureBounds}
+          onEventViewed={handleEventViewed}
         />
 
-      {!showWelcome && (
+      {!showWelcome && !showFilterIntro && (
         isMobile ? (
           <MobileOverlay
             i18n={i18n}
@@ -2142,6 +2149,16 @@ export default function EventMap() {
         availableLanguages={availableLanguages.map(({ code, label }) => ({ code, label }))}
         currentLang={(i18n.language?.split?.('-')[0] ?? 'en')}
         onChangeLanguage={handleWelcomeLangChange}
+      />
+
+      <FilterIntroDialog
+        show={showFilterIntro}
+        onClose={() => setShowFilterIntro(false)}
+        onApply={({ format, type }) => {
+          setFilterFormat(format);
+          setFilterType(type);
+        }}
+        onShowFilters={() => setShowMobileFilters(true)}
       />
 
       <FeedbackModal

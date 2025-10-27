@@ -170,6 +170,17 @@
     "Condividi con gli amici"
   ],
   "ctaStart": "Iniziamo!"
+},
+
+"filterIntro": {
+  "title": "Troppe opzioni? Rendiamolo semplice.",
+  "subtitle": "Dicci cosa stai cercando.",
+  "audience": "Per chi?",
+  "type": "Che tipo?",
+  "apply": "Mostra come selezionato",
+  "skip": "Proverò i filtri più tardi",
+  "more": "Mostra più filtri"
 }
+
 
 }

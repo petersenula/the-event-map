@@ -176,6 +176,17 @@
     "Partager avec des amis"
   ],
   "ctaStart": "C’est parti !"
+},
+
+"filterIntro": {
+  "title": "Trop d’options ? Simplifions.",
+  "subtitle": "Dites-nous ce que vous recherchez.",
+  "audience": "Pour qui ?",
+  "type": "Quel type ?",
+  "apply": "Afficher comme sélectionné",
+  "skip": "J’essaierai les filtres plus tard",
+  "more": "Afficher plus de filtres"
 }
+
   
 }
