@@ -361,7 +361,7 @@ const MapLayer: React.FC<MapLayerProps> = ({
             setSelectedEvent((prev) => (prev === event.id ? null : event.id));
             setViewCount((prev) => {
               const next = prev + 1;
-              if (!isAuthenticated && next === 3) setShowAuthPrompt(true);
+              if (!isAuthenticated && next === 5) setShowAuthPrompt(true);
               return next;
             });
             markAsViewed(event.id);
