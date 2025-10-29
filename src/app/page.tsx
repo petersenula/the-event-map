@@ -2150,17 +2150,7 @@ export default function EventMap() {
         currentLang={(i18n.language?.split?.('-')[0] ?? 'en')}
         onChangeLanguage={handleWelcomeLangChange}
       />
-
-      <FilterIntroDialog
-        show={showFilterIntro}
-        onClose={() => setShowFilterIntro(false)}
-        onApply={({ format, type }) => {
-          setFilterFormat(format);
-          setFilterType(type);
-        }}
-        onShowFilters={() => setShowMobileFilters(true)}
-      />
-
+      
       <FeedbackModal
         open={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
