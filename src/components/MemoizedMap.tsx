@@ -461,23 +461,7 @@ const MemoizedMap: React.FC<Props> = ({
                 <Copy className="w-4 h-4 text-gray-500" />
               </button>
             </p>
-
-            <h2 className="font-bold mb-1">{selected.title}</h2>
-            <p className="mb-1">{getDescription(selected)}</p>
-
-            {selected.website && (
-              <a
-                href={formatWebsite(selected.website)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline break-words flex items-center gap-1"
-              >
-                <LinkIcon className="w-4 h-4 text-blue-600" />
-                {formatWebsite(selected.website)}
-              </a>
-            )}
-
-            <div className="mt-4 flex gap-2 justify-start">
+                        <div className="mt-4 flex gap-2 justify-start">
               {/* ❤️ Избранное */}
               <button
                 data-tour="favorite"
@@ -527,6 +511,21 @@ const MemoizedMap: React.FC<Props> = ({
                 <CalendarDays className="w-5 h-5 text-gray-600" />
               </a>
             </div>
+
+            <h2 className="font-bold mb-1">{selected.title}</h2>
+            <p className="mb-1">{getDescription(selected)}</p>
+
+            {selected.website && (
+              <a
+                href={formatWebsite(selected.website)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline break-words flex items-center gap-1"
+              >
+                <LinkIcon className="w-4 h-4 text-blue-600" />
+                {formatWebsite(selected.website)}
+              </a>
+            )}
           </div>
         </InfoWindow>
       )}
