@@ -1841,7 +1841,7 @@ export default function EventMap() {
           onEventViewed={handleEventViewed}
         />
 
-      {!showWelcome && !showFilterIntro && (
+      {!showWelcome && (
         isMobile ? (
           <MobileOverlay
             i18n={i18n}
@@ -2150,7 +2150,7 @@ export default function EventMap() {
         currentLang={(i18n.language?.split?.('-')[0] ?? 'en')}
         onChangeLanguage={handleWelcomeLangChange}
       />
-      
+
       <FeedbackModal
         open={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
