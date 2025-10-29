@@ -55,7 +55,7 @@
     "other": "Other"
   },
   "auth": {
-    "promo": "To continue, please sign up.",
+    "promo": "Sign in to save your favorites and personal settings.",
     "google": "Sign in with Google",
     "apple": "Sign in with Apple",
     "email": "Get a link by email",
