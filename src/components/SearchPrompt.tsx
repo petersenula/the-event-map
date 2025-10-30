@@ -65,7 +65,7 @@ export default function SearchPrompt() {
         <div className="pointer-events-auto animate-fade-in-out animate-sway bg-white/90 backdrop-blur-md shadow-xl rounded-full px-5 py-2 flex items-center gap-2 text-sm text-gray-800">
             <SearchIcon size={16} className="text-gray-500" />
             <span className="font-medium">{t('searchprompt.hit')}</span>
-            <span className="hidden sm:inline">{t('searchprompt.try')}:</span>
+            <span className="font-medium">{t('searchprompt.try')}</span><SearchIcon size={16} className="text-gray-500" />:
             <span className="font-semibold whitespace-nowrap">{promptText}</span>
         </div>
     </div>
