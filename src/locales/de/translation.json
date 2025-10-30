@@ -171,18 +171,22 @@
   "ctaStart": "Los geht’s!"
 },
 
-"filterIntro": {
-  "title": "Zu viele Optionen? Machen wir es einfacher.",
-  "subtitle": "Sagen Sie uns, wonach Sie suchen.",
-  "audience": "Für wen?",
-  "type": "Welcher Typ?",
-  "apply": "Anzeigen wie ausgewählt",
-  "skip": "Ich probiere Filter später aus",
-  "more": "Mehr Filter anzeigen"
-},
-"install": {
-  "title": "Verliere deine Karte nicht!",
-  "button": "App herunterladen"
-}
+  "filterIntro": {
+    "title": "Zu viele Optionen? Machen wir es einfacher.",
+    "subtitle": "Sagen Sie uns, wonach Sie suchen.",
+    "audience": "Für wen?",
+    "type": "Welcher Typ?",
+    "apply": "Anzeigen wie ausgewählt",
+    "skip": "Ich probiere Filter später aus",
+    "more": "Mehr Filter anzeigen"
+  },
+  "install": {
+    "title": "Verliere deine Karte nicht!",
+    "button": "App herunterladen"
+  },
 
+  "searchprompt": {
+    "hit": "Beliebt diese Woche!",
+    "try": "Versuche in"
+  }
 }

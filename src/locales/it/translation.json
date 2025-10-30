@@ -184,6 +184,11 @@
 "install": {
   "title": "Non perdere la tua mappa!",
   "button": "Scarica l'app"
+},
+
+"searchprompt": {
+  "hit": "Popolare questa settimana!",
+  "try": "Prova in"
 }
 
 }

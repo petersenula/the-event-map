@@ -187,9 +187,14 @@
   "skip": "J’essaierai les filtres plus tard",
   "more": "Afficher plus de filtres"
 },
-"install": {
-  "title": "Ne perdez pas votre carte !",
-  "button": "Télécharger l’application"
-}
-  
+  "install": {
+    "title": "Ne perdez pas votre carte !",
+    "button": "Télécharger l’application"
+  },
+
+  "searchprompt": {
+    "hit": "Populaire cette semaine !",
+    "try": "Essayez dans"
+
+  }
 }

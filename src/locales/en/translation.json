@@ -188,6 +188,11 @@
 "install": {
   "title": "Don't lose your map!",
   "button": "Download the app"
+},
+
+"searchprompt": {
+  "hit": "Popular this week!",
+  "try": "Try in"
 }
 
 }

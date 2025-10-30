@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import I18nProvider from '../components/i18nProvider';
 import ClientWrapper from '../components/ClientWrapper';
+import SearchPrompt from '../components/SearchPrompt';
 
 import 'react-date-range/dist/styles.css';
 import 'react-date-range/dist/theme/default.css';
@@ -77,7 +78,8 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <I18nProvider>         
+        <I18nProvider>
+          <SearchPrompt />         
             <ClientWrapper>
               {children}
             </ClientWrapper>       

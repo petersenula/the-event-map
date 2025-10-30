@@ -2,7 +2,24 @@
 module.exports = {
   // В Tailwind 4 content не нужен!
   theme: {
-    extend: {},
+   extend: {
+    keyframes: {
+      sway: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-3px)' },
+            },
+      'fade-in-out': {
+        '0%': { opacity: '0' },
+        '10%': { opacity: '1' },
+        '90%': { opacity: '1' },
+        '100%': { opacity: '0' },
+      },
+    },
+    animation: {
+      'fade-in-out': 'fade-in-out 6s ease-in-out forwards',
+      sway: 'sway 1.5s ease-in-out infinite',
+    },
+  }
   },
   plugins: [],
   safelist: [
@@ -21,6 +38,15 @@ module.exports = {
     'text-sm',
     'font-small',
     'transition',
+    'top-1/2',
+    'left-1/2',
+    '-translate-x-1/2',
+    '-translate-y-1/2',
+    'animate-fade-in-out',
+    'max-w-sm',
+    'text-center',
+    'shadow-xl',
+    'animate-sway',
   ],
 
 }
