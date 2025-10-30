@@ -359,11 +359,19 @@ const MapLayer: React.FC<MapLayerProps> = ({
           onMarkerClick={(event) => {
             console.log('[marker click]', event.id, event.lat, event.lng);
             setSelectedEvent((prev) => (prev === event.id ? null : event.id));
+
+            // Авторизационный счётчик (оставляем как есть)
             setViewCount((prev) => {
               const next = prev + 1;
               if (!isAuthenticated && next === 3) setShowAuthPrompt(true);
               return next;
             });
+
+            // ➕ Новый счётчик для PWA install
+            const rawInstallCount = localStorage.getItem('install_view_count');
+            const currentInstallCount = rawInstallCount ? parseInt(rawInstallCount, 10) : 0;
+            localStorage.setItem('install_view_count', (currentInstallCount + 1).toString());
+
             markAsViewed(event.id);
             scrollToEvent(event.id);
           }}

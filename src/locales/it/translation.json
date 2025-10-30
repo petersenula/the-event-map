@@ -180,7 +180,10 @@
   "apply": "Mostra come selezionato",
   "skip": "Proverò i filtri più tardi",
   "more": "Mostra più filtri"
+},
+"install": {
+  "title": "Non perdere la tua mappa!",
+  "button": "Scarica l'app"
 }
-
 
 }

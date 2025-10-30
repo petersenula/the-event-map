@@ -2119,6 +2119,7 @@ export default function EventMap() {
     
 
       {/* ОБЩИЕ МОДАЛКИ */}
+      
       {showTranslation && (
         <div className="fixed top-0 right-0 m-4 z-50 max-w-sm w-full">
           <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
@@ -2155,12 +2156,14 @@ export default function EventMap() {
         open={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
       />
+
       {showHomeModal && (
         <HomeLocationModal
           onClose={() => setShowHomeModal(false)}
           onSaved={() => alert(t('home_saved'))}
           mapRef={mapRef}
         />        
+
       )}
     </ClientOnly>
   );

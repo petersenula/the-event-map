@@ -179,7 +179,10 @@
   "apply": "Anzeigen wie ausgewählt",
   "skip": "Ich probiere Filter später aus",
   "more": "Mehr Filter anzeigen"
+},
+"install": {
+  "title": "Verliere deine Karte nicht!",
+  "button": "App herunterladen"
 }
-
 
 }

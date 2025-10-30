@@ -183,7 +183,11 @@
   "apply": "Show as chosen",
   "skip": "I'll try filters later",
   "more": "Show more filters"
-}
+},
 
+"install": {
+  "title": "Don't lose your map!",
+  "button": "Download the app"
+}
 
 }
