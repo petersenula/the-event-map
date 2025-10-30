@@ -11,32 +11,28 @@ export default function InstallPrompt() {
   const { t } = useTranslation();
   const session = useSession();
 
-  // 1. Захватываем beforeinstallprompt
+  // Появилось предложение установки?
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
+
+      const installed = localStorage.getItem('pwa_installed') === 'true';
+      if (installed) return;
+
+      const raw = localStorage.getItem('install_view_count');
+      const count = raw ? parseInt(raw, 10) : 0;
+
+      // Показать сразу при первом входе
+      if (count === 0 || (count % 10 === 0 && count !== 0)) {
+        setShowInstallButton(true);
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handler as EventListener);
     return () => window.removeEventListener('beforeinstallprompt', handler as EventListener);
   }, []);
 
-  // 2. Проверяем счётчик install_view_count
-  useEffect(() => {
-    const installed = localStorage.getItem('pwa_installed') === 'true';
-    if (installed) return;
-
-    const raw = localStorage.getItem('install_view_count');
-    const count = raw ? parseInt(raw, 10) : 0;
-
-    // Показываем, если кратно 10 (но не 0)
-    if (count !== 0 && count % 10 === 0) {
-      setShowInstallButton(true);
-    }
-  }, []);
-
-  // 3. Обработка установки
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     const promptEvent = deferredPrompt as any;
@@ -56,7 +52,7 @@ export default function InstallPrompt() {
     }
   };
 
-  // 4. Ничего не показываем, если уже установлен
+  // Установлено? Ничего не показываем
   if (!showInstallButton || localStorage.getItem('pwa_installed') === 'true') {
     return null;
   }
