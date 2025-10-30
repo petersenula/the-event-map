@@ -4,6 +4,8 @@ import { RefreshCw, Search, User, Home, Info, Filter, List, X, Heart, Share2, Ca
 import cn from 'classnames';
 import DatePicker from 'react-datepicker';
 import React, { Dispatch, useState, SetStateAction, useEffect, RefObject } from 'react';
+import { useRef } from 'react';
+import SearchPrompt from '../SearchPrompt';
 
 interface MobileOverlayProps {
   searchQuery: string;
@@ -185,7 +187,20 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
         prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
     );
     }
-  
+
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
+    const [searchInputCoords, setSearchInputCoords] = useState<{ top: number; left: number } | null>(null);
+
+    useEffect(() => {
+      if (searchInputRef.current) {
+        const rect = searchInputRef.current.getBoundingClientRect();
+        setSearchInputCoords({
+          top: rect.top + window.scrollY,
+          left: rect.left + rect.width / 2 + window.scrollX,
+        });
+      }
+    }, [searchInputRef.current]);
+
     return (
       <>
         {showProfile && (
@@ -421,6 +436,7 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
               <Search className="w-5 h-5 text-gray-500 flex-shrink-0" />
               <input
                 data-tour="search"
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
@@ -437,6 +453,9 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 </button>
               )}
             </div>
+            <SearchPrompt
+              coords={searchInputCoords}
+            />
           </div>
         </div>
 

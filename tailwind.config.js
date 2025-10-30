@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  // В Tailwind 4 content не нужен!
+  content: [
+  "./src/**/*.{js,ts,jsx,tsx}",
+  "./pages/**/*.{js,ts,jsx,tsx}",
+  "./components/**/*.{js,ts,jsx,tsx}",
+],
   theme: {
     extend: {
       keyframes: {
@@ -47,5 +51,15 @@ module.exports = {
     'max-w-sm',
     'text-center',
     'shadow-xl',
+    'bg-yellow-200',
+    'text-lg',
+    'px-6',
+    'py-4',
+    'rounded-2xl',
+    'shadow-2xl',
+    'border-yellow-400',
+    'whitespace-nowrap',
+    'font-bold',
+    'font-semibold',
   ],
 };

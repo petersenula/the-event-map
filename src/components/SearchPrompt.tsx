@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '@/utils/supabase/client';
 import { SearchIcon } from 'lucide-react';
+import { useRef } from 'react';
+
+interface SearchPromptProps {
+  coords?: { top: number; left: number };
+}
 
 type Prompt = {
   id: string;
@@ -16,7 +21,7 @@ type Prompt = {
   text_it: string;
 };
 
-export default function SearchPrompt() {
+export default function SearchPrompt({ coords }: SearchPromptProps) {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [visible, setVisible] = useState(false);
   const { i18n, t } = useTranslation();
@@ -60,14 +65,27 @@ export default function SearchPrompt() {
   const promptText =
     prompt[`text_${lang}` as keyof Prompt] || prompt.text_en;
 
+   if (!visible || !prompt || !coords) return null;
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none">
-        <div className="pointer-events-auto animate-fade-in-out animate-sway bg-white/90 backdrop-blur-md shadow-xl rounded-full px-5 py-2 flex items-center gap-2 text-sm text-gray-800">
-            <SearchIcon size={16} className="text-gray-500" />
-            <span className="font-medium">{t('searchprompt.hit')}</span>
-            <span className="font-medium">{t('searchprompt.try')}</span><SearchIcon size={16} className="text-gray-500" />:
-            <span className="font-semibold whitespace-nowrap">{promptText}</span>
-        </div>
+    <div
+      className="fixed z-[9999] pointer-events-none"
+      style={{
+        top: coords.top - 5, // чуть выше поля
+        left: coords.left,
+        transform: 'translateX(-30%)',
+      }}
+    >
+      <div className="pointer-events-auto animate-fade-in-out animate-sway 
+                      bg-yellow-200 text-black rounded-2xl shadow-2xl 
+                      px-6 py-4 text-lg font-semibold 
+                      flex items-center gap-3 backdrop-blur-sm border border-yellow-400">
+        <SearchIcon size={20} className="text-yellow-700" />
+        <span className="whitespace-nowrap">{t('searchprompt.hit')}</span>
+        <span className="whitespace-nowrap">{t('searchprompt.try')}</span>
+        <SearchIcon size={20} className="text-yellow-700" />
+        <span className="font-bold whitespace-nowrap">{promptText}</span>
+      </div>
     </div>
   );
 }

@@ -78,8 +78,7 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <I18nProvider>
-          <SearchPrompt />         
+        <I18nProvider>     
             <ClientWrapper>
               {children}
             </ClientWrapper>       
