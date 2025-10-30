@@ -23,8 +23,8 @@ export default function InstallPrompt() {
       const raw = localStorage.getItem('install_view_count');
       const count = raw ? parseInt(raw, 10) : 0;
 
-      // Новый показ: на 4-м клике и далее каждые 10 (т.е. 4, 14, 24, ...)
-      if (count >= 4 && (count - 4) % 10 === 0) {
+      // Показать сразу при первом входе
+      if (count === 0 || (count % 10 === 0 && count !== 0)) {
         setShowInstallButton(true);
       }
     };
