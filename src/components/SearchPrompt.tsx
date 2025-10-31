@@ -73,7 +73,7 @@ export default function SearchPrompt({ coords }: SearchPromptProps) {
       style={{
         top: coords.top - 5, // чуть выше поля
         left: coords.left,
-        transform: 'translateX(-10%)',
+        transform: 'translateX(-50%)',
       }}
     >
       <div className="pointer-events-auto animate-fade-in-out animate-sway 
