@@ -68,24 +68,12 @@ export default function SearchPrompt({ coords }: SearchPromptProps) {
    if (!visible || !prompt || !coords) return null;
 
   return (
-    <div
-      className="fixed z-[9999] pointer-events-none"
-      style={{
-        top: coords.top - 5, // чуть выше поля
-        left: coords.left,
-        transform: 'translateX(-50%)',
-      }}
-    >
-      <div className="pointer-events-auto animate-fade-in-out animate-sway 
-                      bg-yellow-200 text-black rounded-2xl shadow-2xl 
-                      px-6 py-4 text-lg font-semibold 
-                      flex items-center gap-3 backdrop-blur-sm border border-yellow-400">
-        <SearchIcon size={20} className="text-yellow-700" />
-        <span className="whitespace-nowrap">{t('searchprompt.hit')}</span>
-        <span className="whitespace-nowrap">{t('searchprompt.try')}</span>
+
+    <div className="fixed bottom-6 left-4 right-4 bg-white border rounded-xl shadow-lg p-4 flex justify-between items-center z-50">
+      <span className="text-sm font-medium">{t('searchprompt.hit')}</span>
+       <span className="whitespace-nowrap">{t('searchprompt.try')}</span>
         <SearchIcon size={20} className="text-yellow-700" />
         <span className="font-bold whitespace-nowrap">{promptText}</span>
-      </div>
     </div>
   );
 }
