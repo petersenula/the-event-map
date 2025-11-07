@@ -343,6 +343,41 @@ const MemoizedMap: React.FC<Props> = ({
                     <ChevronLeft className="w-4 h-4" />
                     Back
                   </button>
+                  <div className="mt-3 flex gap-2 justify-start">
+                    <button
+                      onClick={() => onFavorite(ev.id)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${isFav ? 'text-pink-600' : 'text-gray-600'}`}
+                        fill={isFav ? 'currentColor' : 'none'}
+                      />
+                    </button>
+                    <button
+                      onClick={() => shareEvent(ev)}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Share"
+                    >
+                      <Share2 className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => downloadICS(makeICS(ev), 'event.ics')}
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Add to Calendar"
+                    >
+                      <CalendarPlus className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <a
+                      href={makeGoogleCalendarUrl(ev)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 hover:bg-gray-100 rounded"
+                      title="Google Calendar"
+                    >
+                      <CalendarDays className="w-5 h-5 text-gray-600" />
+                    </a>
+                  </div>
 
                   {(ev.start_date || ev.end_date) && (
                     <p className="font-bold mb-1 flex items-center gap-1">
@@ -382,42 +417,6 @@ const MemoizedMap: React.FC<Props> = ({
                       {formatWebsite(ev.website)}
                     </a>
                   )}
-
-                  <div className="mt-3 flex gap-2 justify-start">
-                    <button
-                      onClick={() => onFavorite(ev.id)}
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                    >
-                      <Heart
-                        className={`w-5 h-5 ${isFav ? 'text-pink-600' : 'text-gray-600'}`}
-                        fill={isFav ? 'currentColor' : 'none'}
-                      />
-                    </button>
-                    <button
-                      onClick={() => shareEvent(ev)}
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title="Share"
-                    >
-                      <Share2 className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => downloadICS(makeICS(ev), 'event.ics')}
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title="Add to Calendar"
-                    >
-                      <CalendarPlus className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <a
-                      href={makeGoogleCalendarUrl(ev)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 hover:bg-gray-100 rounded"
-                      title="Google Calendar"
-                    >
-                      <CalendarDays className="w-5 h-5 text-gray-600" />
-                    </a>
-                  </div>
                 </div>
               );
             })()}
