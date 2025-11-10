@@ -1978,32 +1978,83 @@ export default function EventMap() {
                 <p className="text-gray-500 text-sm text-center">{t('ui.noFavorites')}</p>
               ) : (
                 events
-                  .filter(ev => favorites.includes(String(ev.id)))
-                  .map(ev => (
-                    <div
-                      key={ev.id}
-                      className="mb-4 p-3 rounded-lg bg-white border border-gray-200 shadow"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="text-base font-bold text-gray-900 mb-1">{ev.title}</h3>
-                          <p className="text-xs text-gray-800 mb-1">{getDescription(ev)}</p>
-                          <p className="text-xs text-gray-600 mb-1">📍 {ev.address}</p>
-                          <p className="text-xs text-gray-600">
-                            🕒 {formatDate(ev.start_date)} – {formatDate(ev.end_date)} {formatTime(ev.start_time)} – {formatTime(ev.end_time)}
+                .filter(ev => favorites.includes(String(ev.id)))
+                .map(ev => (
+                  <div
+                    key={ev.id}
+                    className="mb-4 p-3 rounded-lg bg-white border border-gray-200 shadow"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 mb-1">{ev.title}</h3>
+                        <p className="text-xs text-gray-800 mb-1">{getDescription(ev)}</p>
+
+                        {/* адрес + копировать */}
+                        {ev.address && (
+                          <p className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                            <MapPin className="w-4 h-4 text-gray-600" />
+                            <span className="flex-1">{ev.address}</span>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(ev.address)}
+                              className="p-1 hover:bg-gray-200 rounded"
+                              title={t('ui.copyAddress')}
+                              aria-label={t('ui.copyAddress')}
+                            >
+                              <Copy className="w-4 h-4 text-gray-500" />
+                            </button>
                           </p>
-                        </div>
-                        <button
-                          onClick={() => toggleFavorite(String(ev.id))}
-                          className="shrink-0 p-1 rounded hover:bg-gray-100"
-                          aria-label="remove favorite"
-                          title={t('ui.removeFavorite')}
-                        >
-                          <Heart className="w-5 h-5 text-pink-600" fill="currentColor" />
-                        </button>
+                        )}
+
+                        {/* даты */}
+                        <p className="text-xs text-gray-600">
+                          🕒 {formatDate(ev.start_date)} – {formatDate(ev.end_date)} {formatTime(ev.start_time)} – {formatTime(ev.end_time)}
+                        </p>
                       </div>
+
+                      {/* снять из избранного */}
+                      <button
+                        onClick={() => toggleFavorite(String(ev.id))}
+                        className="shrink-0 p-1 rounded hover:bg-gray-100"
+                        aria-label="remove favorite"
+                        title={t('ui.removeFavorite')}
+                      >
+                        <Heart className="w-5 h-5 text-pink-600" fill="currentColor" />
+                      </button>
                     </div>
-                  ))
+
+                    {/* действия: поделиться / ICS / Google Calendar */}
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => shareEvent(ev)}
+                        className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 border border-gray-300"
+                        title={t('ui.share')}
+                        aria-label={t('ui.share')}
+                      >
+                        <Share2 className="w-5 h-5 text-gray-600" />
+                      </button>
+
+                      <button
+                        onClick={() => downloadICS(makeICS(ev), `${(ev.title || 'event').replace(/[^\w\-]+/g,'_')}.ics`)}
+                        className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 border border-gray-300"
+                        title={t('ui.addToCalendar')}
+                        aria-label={t('ui.addToCalendar')}
+                      >
+                        <CalendarPlus className="w-5 h-5 text-gray-600" />
+                      </button>
+
+                      <a
+                        href={makeGoogleCalendarUrl(ev)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 border border-gray-300"
+                        title="Google Calendar"
+                        aria-label="Google Calendar"
+                      >
+                        <CalendarDays className="w-5 h-5 text-gray-600" />
+                      </a>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           ) : (
@@ -2119,7 +2170,7 @@ export default function EventMap() {
     
 
       {/* ОБЩИЕ МОДАЛКИ */}
-      
+
       {showTranslation && (
         <div className="fixed top-0 right-0 m-4 z-50 max-w-sm w-full">
           <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
