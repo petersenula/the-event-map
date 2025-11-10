@@ -537,7 +537,15 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                     {/* Шапка: заголовок + сердечко справа */}
                     <div className="flex items-start justify-between gap-3">
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{event.title}</h3>
-
+                        {event.image_url && (
+                          <img
+                            src={event.image_url}
+                            alt={event.title || 'Event image'}
+                            className="w-full h-32 rounded-md object-cover mb-2"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
                   <button
                     onClick={(e) => { e.stopPropagation(); console.log('[UI] Heart clicked:', event.id); toggleFavorite(event.id); }}
                     className="shrink-0 p-1 rounded hover:bg-gray-100"
@@ -550,7 +558,6 @@ const DesktopOverlay: React.FC<DesktopOverlayProps> = ({
                         />
                     </button>
                     </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{event.title}</h3>
                   <p className="text-sm text-gray-800 mb-1">{getDescription(event)}</p>
                   <p className="text-sm text-gray-600 mb-1">📍 {event.address}</p>
                   <p className="text-sm text-gray-600 mb-1">

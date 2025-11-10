@@ -23,6 +23,7 @@ export type EventRecord = {
   id: string | number;
   lat: number | null;
   lng: number | null;
+  image_url?: string | null;
   [k: string]: any;
 };
 
@@ -82,6 +83,7 @@ export function normalizeEvent(raw: any): EventRecord {
     lat: Number.isFinite(la) ? la : null,
     lng: Number.isFinite(ln) ? ln : null,
     type: types.length ? types : ['other'],
+    image_url: raw?.image_url ?? null,
     types,
   };
 }

@@ -489,6 +489,15 @@ const MobileOverlay: React.FC<MobileOverlayProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="text-base font-bold text-gray-900 mb-1">{event.title}</h3>
+                    {event.image_url && (
+                      <img
+                        src={event.image_url}
+                        alt={event.title || 'Event image'}
+                        className="w-full h-32 rounded-md object-cover mb-2"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
                     <p className="text-xs text-gray-800 mb-1">{getDescription(event)}</p>
                     <p className="text-xs text-gray-600 mb-1">📍 {event.address}</p>
                     <p className="text-xs text-gray-600">

@@ -254,6 +254,19 @@ export default function EventMap() {
     }
   }
 
+  async function fetchImageAsFile(url: string, fileName = 'event.jpg'): Promise<File | null> {
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      // простая нормализация mime
+      const type = blob.type || 'image/jpeg';
+      return new File([blob], fileName, { type });
+    } catch {
+      return null;
+    }
+  }
+
   const [loadedCount, setLoadedCount] = useState<number>(0);
 
   useEffect(() => {
@@ -685,6 +698,7 @@ export default function EventMap() {
     event_description_fr?: string | null;
     event_description_it?: string | null;
     event_description_ru?: string | null;
+    image_url?: string | null;
   };
 
   const getDescription = (event: EventRow): string => {
@@ -1660,19 +1674,39 @@ export default function EventMap() {
     const address = ev.address || '';
     const start = formatDate(ev.start_date);
     const end = formatDate(ev.end_date);
-
-    // если начало и конец одинаковы — показываем один раз
     const dateRange = start === end ? start : `${start} – ${end}`;
+    const startTimeStr = (typeof ev.start_time === 'string' && ev.start_time.length >= 5) ? ev.start_time.slice(0,5) : '';
 
-    const text = `${siteUrl}\n\n${title}\n${dateRange}\n${address}\n\n${description}`;
+    // всегда кладём ссылку на картинку (если есть) в текст — это фолбэк
+    const imageUrl = ev.image_url && typeof ev.image_url === 'string' ? ev.image_url : '';
+
+    const text =
+  `${siteUrl}
+
+  ${title}
+  ${dateRange}
+  ${startTimeStr}
+  ${address}
+
+  ${description}
+  ${imageUrl ? `\nImage: ${imageUrl}\n` : ''}`;
 
     try {
+      // Пытаемся приложить файл (если браузер умеет и картинка есть)
+      let files: File[] | undefined = undefined;
+      if (imageUrl) {
+        const f = await fetchImageAsFile(imageUrl, `${(title || 'event').replace(/[^\w\-]+/g,'_')}.jpg`);
+        if (f) files = [f];
+      }
+
+      const canShareFiles = !!(files && (navigator as any).canShare?.({ files }));
+
       if ((navigator as any).share) {
-        await (navigator as any).share({
-          title,
-          text,
-          url: eventUrl,
-        });
+        if (canShareFiles) {
+          await (navigator as any).share({ title, text, url: eventUrl, files });
+        } else {
+          await (navigator as any).share({ title, text, url: eventUrl });
+        }
       } else {
         await navigator.clipboard.writeText(`${text}\n${eventUrl}`);
         alert(t('ui.copied') || 'Link copied');
@@ -1987,6 +2021,15 @@ export default function EventMap() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="text-base font-bold text-gray-900 mb-1">{ev.title}</h3>
+                        {ev.image_url && (
+                          <img
+                            src={ev.image_url}
+                            alt={ev.title || 'Event image'}
+                            className="w-full h-32 rounded-md object-cover mb-2"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
                         <p className="text-xs text-gray-800 mb-1">{getDescription(ev)}</p>
 
                         {/* адрес + копировать */}
@@ -2086,6 +2129,15 @@ export default function EventMap() {
                       {/* Заголовок + сердечко */}
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{ev.title}</h3>
+                        {ev.image_url && (
+                          <img
+                            src={ev.image_url}
+                            alt={ev.title || 'Event image'}
+                            className="w-full h-32 rounded-md object-cover mb-2"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
                         <button
                           onClick={() => toggleFavorite(String(ev.id))}
                           className="shrink-0 p-1 rounded hover:bg-gray-100"
