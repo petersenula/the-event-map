@@ -1674,39 +1674,26 @@ export default function EventMap() {
     const address = ev.address || '';
     const start = formatDate(ev.start_date);
     const end = formatDate(ev.end_date);
-    const dateRange = start === end ? start : `${start} – ${end}`;
     const startTimeStr = (typeof ev.start_time === 'string' && ev.start_time.length >= 5) ? ev.start_time.slice(0,5) : '';
+    const endTimeStr   = (typeof ev.end_time   === 'string' && ev.end_time.length   >= 5) ? ev.end_time.slice(0,5)   : '';
+    const timeRange = (startTimeStr || endTimeStr)
+    ? `${startTimeStr || '—'} – ${endTimeStr || '—'}`
+    : ''; // если времени нет — не печатаем
 
-    // всегда кладём ссылку на картинку (если есть) в текст — это фолбэк
-    const imageUrl = ev.image_url && typeof ev.image_url === 'string' ? ev.image_url : '';
+    const imageUrl = (typeof ev.image_url === 'string' && ev.image_url.trim()) ? ev.image_url.trim() : '';
 
-    const text =
-  `${siteUrl}
+    // если начало и конец одинаковы — показываем один раз
+    const dateRange = start === end ? start : `${start} – ${end}`;
 
-  ${title}
-  ${dateRange}
-  ${startTimeStr}
-  ${address}
-
-  ${description}
-  ${imageUrl ? `\nImage: ${imageUrl}\n` : ''}`;
+    const text = `${siteUrl}\n\n${title}\n${dateRange}\n${timeRange}\n${address}\n\n${description}`;
 
     try {
-      // Пытаемся приложить файл (если браузер умеет и картинка есть)
-      let files: File[] | undefined = undefined;
-      if (imageUrl) {
-        const f = await fetchImageAsFile(imageUrl, `${(title || 'event').replace(/[^\w\-]+/g,'_')}.jpg`);
-        if (f) files = [f];
-      }
-
-      const canShareFiles = !!(files && (navigator as any).canShare?.({ files }));
-
       if ((navigator as any).share) {
-        if (canShareFiles) {
-          await (navigator as any).share({ title, text, url: eventUrl, files });
-        } else {
-          await (navigator as any).share({ title, text, url: eventUrl });
-        }
+        await (navigator as any).share({
+          title,
+          text,
+          url: eventUrl,
+        });
       } else {
         await navigator.clipboard.writeText(`${text}\n${eventUrl}`);
         alert(t('ui.copied') || 'Link copied');
