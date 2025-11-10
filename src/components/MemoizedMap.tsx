@@ -300,7 +300,15 @@ const MemoizedMap: React.FC<Props> = ({
                           {/* Контент */}
                           <div className="min-w-0">
                             <div className="font-semibold truncate">{ev.title}</div>
-
+                            {ev.image_url && (
+                              <img
+                                src={ev.image_url}
+                                alt={ev.title || 'Event image'}
+                                className="w-full h-36 rounded-md object-cover mb-2"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
                             {/* Дата + время */}
                             {(ev.start_date || ev.end_date) && (
                               <div className="text-xs text-gray-600">
@@ -404,6 +412,15 @@ const MemoizedMap: React.FC<Props> = ({
                   </p>
 
                   <h2 className="font-bold mb-1">{ev.title}</h2>
+                  {ev.image_url && (
+                    <img
+                      src={ev.image_url}
+                      alt={ev.title || 'Event image'}
+                      className="w-full h-36 rounded-md object-cover mb-2"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
                   <p className="mb-1">{getDescription(ev)}</p>
 
                   {ev.website && (
@@ -512,6 +529,15 @@ const MemoizedMap: React.FC<Props> = ({
             </div>
 
             <h2 className="font-bold mb-1">{selected.title}</h2>
+            {selected.image_url && (
+              <img
+                src={selected.image_url}
+                alt={selected.title || 'Event image'}
+                className="w-full h-36 rounded-md object-cover mb-2"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            )}
             <p className="mb-1">{getDescription(selected)}</p>
 
             {selected.website && (

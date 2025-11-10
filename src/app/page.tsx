@@ -2117,15 +2117,6 @@ export default function EventMap() {
                       {/* Заголовок + сердечко */}
                       <div className="flex items-start justify-between gap-3">
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{ev.title}</h3>
-                        {ev.image_url && (
-                          <img
-                            src={ev.image_url}
-                            alt={ev.title || 'Event image'}
-                            className="w-full h-32 rounded-md object-cover mb-2"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                          />
-                        )}
                         <button
                           onClick={() => toggleFavorite(String(ev.id))}
                           className="shrink-0 p-1 rounded hover:bg-gray-100"
@@ -2135,7 +2126,15 @@ export default function EventMap() {
                           <Heart className="w-5 h-5 text-pink-600" fill="currentColor" />
                         </button>
                       </div>
-
+                      {ev.image_url && (
+                        <img
+                          src={ev.image_url}
+                          alt={ev.title || 'Event image'}
+                          className="w-full h-32 rounded-md object-cover mb-2"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
                       {/* Описание */}
                       <p className="text-sm text-gray-800 mb-1">{getDescription(ev)}</p>
 
