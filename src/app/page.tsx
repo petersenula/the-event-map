@@ -1693,6 +1693,7 @@ export default function EventMap() {
           title,
           text,
           url: eventUrl,
+          imageUrl
         });
       } else {
         await navigator.clipboard.writeText(`${text}\n${eventUrl}`);
